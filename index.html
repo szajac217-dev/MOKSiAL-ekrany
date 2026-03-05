@@ -1,4 +1,95 @@
 <!DOCTYPE html>
+<html lang="pl">
+<head>
+
+<meta charset="UTF-8">
+<title>MOK - Ekrany informacyjne</title>
+
+<style>
+
+body{
+margin:0;
+background:black;
+overflow:hidden;
+}
+
+#slide{
+position:absolute;
+width:100vw;
+height:100vh;
+object-fit:contain;
+opacity:0;
+transition:opacity 1.5s;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<img id="slide">
+
+<script>
+
+const owner = "szajac217-dev"
+const repo = "MOKSIAL-ekrany"
+const folder = "Plakaty"
+
+let images = []
+let index = 0
+const slide = document.getElementById("slide")
+
+async function loadImages(){
+
+const url = `https://api.github.com/repos/${owner}/${repo}/contents/${folder}`
+
+const response = await fetch(url)
+const data = await response.json()
+
+images = data
+.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i))
+.map(file => file.download_url)
+
+startSlideshow()
+
+}
+
+function startSlideshow(){
+
+function showSlide(){
+
+slide.style.opacity = 0
+
+setTimeout(()=>{
+
+slide.src = images[index]
+slide.style.opacity = 1
+
+index++
+
+if(index >= images.length){
+index = 0
+}
+
+},800)
+
+}
+
+showSlide()
+
+setInterval(showSlide,8000)
+
+}
+
+loadImages()
+
+setInterval(()=>location.reload(),300000)
+
+</script>
+
+</body>
+</html><!DOCTYPE html>
 <html>
 <head>
 
