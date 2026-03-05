@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MOK ekrany</title>
+
+<style>
+
+body{
+margin:0;
+background:black;
+overflow:hidden;
+}
+
+#slide{
+position:absolute;
+width:100%;
+height:100%;
+object-fit:contain;
+opacity:0;
+transition:opacity 1.5s;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<img id="slide">
+
+<script>
+
+const images = [
+"plakat1.jpg",
+"plakat2.jpg",
+"plakat3.jpg"
+];
+
+let index = 0;
+const slide = document.getElementById("slide");
+
+function showSlide(){
+
+slide.style.opacity = 0;
+
+setTimeout(()=>{
+
+slide.src = images[index];
+slide.style.opacity = 1;
+
+index++;
+
+if(index >= images.length){
+index = 0;
+}
+
+},800);
+
+}
+
+showSlide();
+
+setInterval(showSlide,8000);
+
+setInterval(()=>location.reload(),300000);
+
+</script>
+
+</body>
+</html>
