@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="UTF-8">
 <title>MOK ekrany</title>
 
@@ -14,8 +15,8 @@ overflow:hidden;
 
 #slide{
 position:absolute;
-width:100%;
-height:100%;
+width:100vw;
+height:100vh;
 object-fit:contain;
 opacity:0;
 transition:opacity 1.5s;
@@ -31,39 +32,59 @@ transition:opacity 1.5s;
 
 <script>
 
-const images = [
-"plakat1.jpg",
-"plakat2.jpg",
-"plakat3.jpg"
-];
+const owner = "szajac217-dev"
+const repo = "MOKSIAL-ekrany"
+const folder = "Plakaty"
 
-let index = 0;
-const slide = document.getElementById("slide");
+let images = []
+let index = 0
+const slide = document.getElementById("slide")
+
+async function loadImages(){
+
+const url = `https://api.github.com/repos/${owner}/${repo}/contents/${folder}`
+
+const response = await fetch(url)
+const data = await response.json()
+
+images = data
+.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i))
+.map(file => file.download_url)
+
+startSlideshow()
+
+}
+
+function startSlideshow(){
 
 function showSlide(){
 
-slide.style.opacity = 0;
+slide.style.opacity = 0
 
 setTimeout(()=>{
 
-slide.src = images[index];
-slide.style.opacity = 1;
+slide.src = images[index]
+slide.style.opacity = 1
 
-index++;
+index++
 
 if(index >= images.length){
-index = 0;
+index = 0
 }
 
-},800);
+},800)
 
 }
 
-showSlide();
+showSlide()
 
-setInterval(showSlide,8000);
+setInterval(showSlide,8000)
 
-setInterval(()=>location.reload(),300000);
+}
+
+loadImages()
+
+setInterval(()=>location.reload(),300000)
 
 </script>
 
