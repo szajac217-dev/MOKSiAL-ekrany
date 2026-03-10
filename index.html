@@ -169,6 +169,595 @@
       font-weight: 700;
       letter-spacing: 0.3px;
       text-shadow: 0 0 10px rgba(0,0,0,0.45);
+      white-space: nowrap;
+    }
+
+    .qr-box {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      width: 170px;
+      height: 170px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.96);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 12px 34px rgba(0,0,0,0.55);
+      animation: qrPulse 4s ease-in-out infinite;
+    }
+
+    .qr-box img {
+      width: 150px;
+      height: 150px;
+      object-fit: contain;
+      display: block;
+    }
+
+    @keyframes qrPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @media (orientation: portrait) {
+      :root {
+        --clockTop: 18px;
+        --clockRight: 20px;
+        --clockHeight: 86px;
+        --topGapBelowClock: 8px;
+        --tickerHeight: 190px;
+        --tickerQrSpace: 210px;
+      }
+
+      .clock-box {
+        min-width: 170px;
+        padding: 8px 12px;
+      }
+
+      .clock {
+        font-size: 38px;
+        letter-spacing: 3px;
+      }
+
+      .date {
+        font-size: 12px;
+      }
+
+      .ticker-text {
+        font-size: 42px;
+      }
+
+      .qr-box {
+        right: 10px;
+        bottom: 10px;
+        width: 170px;
+        height: 170px;
+      }
+
+      .qr-box img {
+        width: 150px;
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <img id="slideA" class="slide visible" alt="Plakat A">
+    <img id="slideB" class="slide" alt="Plakat B">
+
+    <div class="overlay-top">
+      <div class="clock-box">
+        <div id="clock" class="clock">00:00</div>
+        <div id="date" class="date">--</div>
+      </div>
+    </div>
+
+    <div class="ticker-bar">
+      <div class="ticker-wrap">
+        <div class="ticker-track" id="tickerTrack">
+          <span class="ticker-text" id="tickerText"></span>
+        </div>
+      </div>
+
+      <div class="qr-box" id="qrBox">
+        <img src="qr.png" alt="Kod QR" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
+    <div id="message" class="message">Ładowanie plakatów...</div>
+  </div>
+
+  <script>
+    const slideDuration = 8000;
+    const reloadInterval = 300000;
+    const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
+
+    const tickerItems = [
+      "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
+      "MOKSiAL, ul. Słowackiego 13 - godziny działania: poniedziałek-piątek 8:00-16:00",
+      "4Peron - godziny działania: według repertuaru i harmonogramu wydarzeń",
+      "Zapraszamy na koncerty, spektakle, kino, warsztaty i spotkania",
+      "Chcesz wiedzieć więcej? Wejdź na naszą stronę www.moksial.pl lub zeskanuj kod QR >>>"
+    ];
+
+    const tickerSpeed = 55;
+    const tickerPauseMs = 5000;
+
+    let images = [];
+    let currentIndex = 0;
+    let activeSlide = 0;
+    let slideshowStarted = false;
+    let currentTimer = null;
+
+    const slideA = document.getElementById("slideA");
+    const slideB = document.getElementById("slideB");
+    const messageBox = document.getElementById("message");
+    const clockEl = document.getElementById("clock");
+    const dateEl = document.getElementById("date");
+
+    const tickerTrack = document.getElementById("tickerTrack");
+    const tickerTextEl = document.getElementById("tickerText");
+    const tickerWrap = document.querySelector(".ticker-wrap");
+
+    let tickerAnimationFrame = null;
+    let tickerPauseTimeout = null;
+    let tickerX = 0;
+    let lastTickerTs = 0;
+    let tickerTextWidth = 0;
+    let tickerWrapWidth = 0;
+    let tickerRunning = false;
+    let tickerStopX = 0;
+
+    const transitions = [
+      { name: "fade", inDuration: 1800, outDuration: 1400 },
+      { name: "zoom", inDuration: 2200, outDuration: 1600 },
+      { name: "slide-left", inDuration: 1600, outDuration: 1200 },
+      { name: "slide-right", inDuration: 1600, outDuration: 1200 },
+      { name: "slide-up", inDuration: 1600, outDuration: 1200 },
+      { name: "soft-rotate", inDuration: 1800, outDuration: 1400 }
+    ];
+
+    function showMessage(text, isError = false) {
+      messageBox.textContent = text;
+      messageBox.className = isError ? "message error" : "message";
+      messageBox.style.display = "flex";
+    }
+
+    function hideMessage() {
+      messageBox.style.display = "none";
+    }
+
+    function updateClock() {
+      const now = new Date();
+
+      const time = now.toLocaleTimeString("pl-PL", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      const date = now.toLocaleDateString("pl-PL", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
+
+      clockEl.textContent = time;
+      dateEl.textContent = date;
+    }
+
+    function buildTickerText() {
+      const separator = "   ✦   ";
+      tickerTextEl.textContent = tickerItems.join(separator);
+    }
+
+    function setupTickerMeasurements() {
+      tickerTrack.style.transform = "translateX(0px)";
+      tickerTextWidth = tickerTextEl.offsetWidth;
+      tickerWrapWidth = tickerWrap.offsetWidth;
+      tickerX = tickerWrapWidth;
+      tickerStopX = tickerWrapWidth - tickerTextWidth;
+      tickerTrack.style.transform = `translateX(${tickerX}px)`;
+    }
+
+    function pauseTickerAndRestart() {
+      tickerRunning = false;
+      tickerTrack.style.transform = `translateX(${tickerStopX}px)`;
+
+      tickerPauseTimeout = setTimeout(() => {
+        tickerX = tickerWrapWidth;
+        tickerTrack.style.transform = `translateX(${tickerX}px)`;
+        lastTickerTs = 0;
+        tickerRunning = true;
+        tickerAnimationFrame = requestAnimationFrame(tickerStep);
+      }, tickerPauseMs);
+    }
+
+    function tickerStep(timestamp) {
+      if (!tickerRunning) return;
+
+      if (!lastTickerTs) lastTickerTs = timestamp;
+      const delta = (timestamp - lastTickerTs) / 1000;
+      lastTickerTs = timestamp;
+
+      tickerX -= tickerSpeed * delta;
+
+      if (tickerX <= tickerStopX) {
+        pauseTickerAndRestart();
+        return;
+      }
+
+      tickerTrack.style.transform = `translateX(${tickerX}px)`;
+      tickerAnimationFrame = requestAnimationFrame(tickerStep);
+    }
+
+    function startTicker() {
+      if (tickerAnimationFrame) cancelAnimationFrame(tickerAnimationFrame);
+      if (tickerPauseTimeout) clearTimeout(tickerPauseTimeout);
+
+      buildTickerText();
+      setupTickerMeasurements();
+
+      tickerRunning = true;
+      lastTickerTs = 0;
+      tickerAnimationFrame = requestAnimationFrame(tickerStep);
+    }
+
+    function getActiveSlide() {
+      return activeSlide === 0 ? slideA : slideB;
+    }
+
+    function getInactiveSlide() {
+      return activeSlide === 0 ? slideB : slideA;
+    }
+
+    function resetSlideState(slide) {
+      slide.classList.remove("visible");
+      slide.style.transition = "none";
+      slide.style.opacity = "0";
+      slide.style.transform = "translateX(0) translateY(0) scale(1) rotate(0deg)";
+    }
+
+    function applyTransition(slideIn, slideOut, transition) {
+      resetSlideState(slideIn);
+
+      if (transition.name === "fade") {
+        slideIn.style.transform = "scale(1)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideOut.style.opacity = "0";
+      }
+
+      if (transition.name === "zoom") {
+        slideIn.style.transform = "scale(1.06)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out, transform ${slideDuration}ms linear`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "scale(1)";
+        slideOut.style.opacity = "0";
+      }
+
+      if (transition.name === "slide-left") {
+        slideIn.style.transform = "translateX(6%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateX(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateX(-3%)";
+      }
+
+      if (transition.name === "slide-right") {
+        slideIn.style.transform = "translateX(-6%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateX(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateX(3%)";
+      }
+
+      if (transition.name === "slide-up") {
+        slideIn.style.transform = "translateY(5%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateY(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateY(-2%)";
+      }
+
+      if (transition.name === "soft-rotate") {
+        slideIn.style.transform = "scale(1.02) rotate(-1deg)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out, transform ${transition.inDuration}ms ease-in-out`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out, transform ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "scale(1) rotate(0deg)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "scale(1.01) rotate(0.5deg)";
+      }
+
+      slideIn.classList.add("visible");
+      slideOut.classList.remove("visible");
+    }
+
+    function getRandomTransition() {
+      return transitions[Math.floor(Math.random() * transitions.length)];
+    }
+
+    function scheduleNextSlide() {
+      if (currentTimer) {
+        clearTimeout(currentTimer);
+      }
+      currentTimer = setTimeout(showNextSlide, slideDuration);
+    }
+
+    function showNextSlide() {
+      if (!images.length) return;
+
+      const current = getActiveSlide();
+      const next = getInactiveSlide();
+      const transition = getRandomTransition();
+
+      next.onload = () => {
+        applyTransition(next, current, transition);
+        activeSlide = activeSlide === 0 ? 1 : 0;
+        currentIndex = (currentIndex + 1) % images.length;
+        scheduleNextSlide();
+      };
+
+      next.onerror = () => {
+        currentIndex = (currentIndex + 1) % images.length;
+        scheduleNextSlide();
+      };
+
+      next.src = images[currentIndex];
+    }
+
+    async function loadImages() {
+      try {
+        const response = await fetch("plakaty.json", { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error("Plik plakaty.json nie zawiera listy");
+        }
+
+        images = data.filter(file => validExtensions.test(file));
+
+        if (images.length === 0) {
+          throw new Error("Brak plakatów w pliku plakaty.json");
+        }
+
+        hideMessage();
+
+        if (!slideshowStarted) {
+          startSlideshow();
+          slideshowStarted = true;
+        }
+      } catch (error) {
+        console.error(error);
+        showMessage(
+          'Nie udało się wczytać pliku "plakaty.json". Proszę sprawdzić czy plik istnieje i czy workflow GitHuba go wygenerował.',
+          true
+        );
+      }
+    }
+
+    function startSlideshow() {
+      const first = getActiveSlide();
+
+      first.onload = () => {
+        first.style.transition = "opacity 1200ms ease-in-out";
+        first.style.opacity = "1";
+        first.classList.add("visible");
+        currentIndex = (currentIndex + 1) % images.length;
+        scheduleNextSlide();
+      };
+
+      first.onerror = () => {
+        showMessage("Nie udało się załadować pierwszego plakatu.", true);
+      };
+
+      first.src = images[currentIndex];
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    loadImages();
+    startTicker();
+    window.addEventListener("resize", startTicker);
+
+    setInterval(() => location.reload(), reloadInterval);
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOKSiAL - Ekrany informacyjne</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    :root {
+      --clockTop: 18px;
+      --clockRight: 22px;
+      --clockHeight: 88px;
+      --topGapBelowClock: 8px;
+
+      --tickerHeight: 190px;
+      --tickerQrSpace: 210px;
+
+      --slideTop: calc(var(--clockTop) + var(--clockHeight) + var(--topGapBelowClock));
+      --slideBottom: var(--tickerHeight);
+    }
+
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .slide {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: var(--slideTop);
+      bottom: var(--slideBottom);
+      width: 100%;
+      height: calc(100vh - var(--slideTop) - var(--slideBottom));
+      object-fit: contain;
+      object-position: top center;
+      opacity: 0;
+      transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+      will-change: opacity, transform;
+      background: #000;
+    }
+
+    .visible {
+      opacity: 1;
+    }
+
+    .overlay-top {
+      position: absolute;
+      top: var(--clockTop);
+      right: var(--clockRight);
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    .clock-box {
+      background: rgba(0, 0, 0, 0.42);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px;
+      padding: 10px 16px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      min-width: 180px;
+      min-height: var(--clockHeight);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .clock {
+      color: #ff4d4d;
+      font-size: 46px;
+      line-height: 1;
+      letter-spacing: 4px;
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      text-shadow:
+        0 0 4px rgba(255, 77, 77, 0.75),
+        0 0 10px rgba(255, 77, 77, 0.45),
+        0 0 18px rgba(255, 77, 77, 0.25);
+    }
+
+    .date {
+      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 14px;
+      text-align: right;
+      letter-spacing: 0.4px;
+    }
+
+    .message {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      color: white;
+      font-size: 24px;
+      z-index: 80;
+      background: #000;
+    }
+
+    .error {
+      color: #ffb0b0;
+    }
+
+    .ticker-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--tickerHeight);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(
+        90deg,
+        rgba(10, 10, 10, 0.96) 0%,
+        rgba(18, 18, 18, 0.94) 50%,
+        rgba(10, 10, 10, 0.96) 100%
+      );
+      border-top: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(6px);
+      overflow: hidden;
+      padding-right: var(--tickerQrSpace);
+    }
+
+    .ticker-wrap {
+      position: absolute;
+      left: 22px;
+      right: var(--tickerQrSpace);
+      overflow: hidden;
+      white-space: nowrap;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    .ticker-track {
+      display: inline-block;
+      white-space: nowrap;
+      will-change: transform;
+      transform: translateX(0);
+    }
+
+    .ticker-text {
+      display: inline-block;
+      color: #ffffff;
+      font-size: 44px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-shadow: 0 0 10px rgba(0,0,0,0.45);
       padding-right: 0;
       white-space: nowrap;
     }
