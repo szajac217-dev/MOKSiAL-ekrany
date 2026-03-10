@@ -19,6 +19,19 @@
       font-family: Arial, Helvetica, sans-serif;
     }
 
+    :root {
+      --clockTop: 18px;
+      --clockRight: 22px;
+      --clockHeight: 88px;
+      --topGapBelowClock: 8px;
+
+      --tickerHeight: 130px;
+      --tickerQrSpace: 150px;
+
+      --slideTop: calc(var(--clockTop) + var(--clockHeight) + var(--topGapBelowClock));
+      --slideBottom: var(--tickerHeight);
+    }
+
     #app {
       position: relative;
       width: 100vw;
@@ -29,10 +42,14 @@
 
     .slide {
       position: absolute;
-      inset: 0;
+      left: 0;
+      right: 0;
+      top: var(--slideTop);
+      bottom: var(--slideBottom);
       width: 100%;
-      height: 100%;
+      height: calc(100vh - var(--slideTop) - var(--slideBottom));
       object-fit: contain;
+      object-position: top center;
       opacity: 0;
       transform: translateX(0) translateY(0) scale(1) rotate(0deg);
       will-change: opacity, transform;
@@ -45,8 +62,8 @@
 
     .overlay-top {
       position: absolute;
-      top: 18px;
-      right: 22px;
+      top: var(--clockTop);
+      right: var(--clockRight);
       z-index: 50;
       pointer-events: none;
     }
@@ -59,6 +76,10 @@
       backdrop-filter: blur(6px);
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
       min-width: 180px;
+      min-height: var(--clockHeight);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .clock {
@@ -94,7 +115,7 @@
       padding: 30px;
       color: white;
       font-size: 24px;
-      z-index: 30;
+      z-index: 80;
       background: #000;
     }
 
@@ -107,64 +128,59 @@
       left: 0;
       right: 0;
       bottom: 0;
-      height: 110px;
+      height: var(--tickerHeight);
       z-index: 60;
       display: flex;
       align-items: center;
       background: linear-gradient(
         90deg,
-        rgba(10, 10, 10, 0.95) 0%,
-        rgba(18, 18, 18, 0.92) 50%,
-        rgba(10, 10, 10, 0.95) 100%
+        rgba(10, 10, 10, 0.96) 0%,
+        rgba(18, 18, 18, 0.94) 50%,
+        rgba(10, 10, 10, 0.96) 100%
       );
       border-top: 1px solid rgba(255,255,255,0.12);
       backdrop-filter: blur(6px);
       overflow: hidden;
-      padding-right: 120px;
+      padding-right: var(--tickerQrSpace);
     }
 
     .ticker-wrap {
       position: absolute;
-      left: 0;
-      right: 120px;
+      left: 22px;
+      right: var(--tickerQrSpace);
       overflow: hidden;
       white-space: nowrap;
+      height: 100%;
+      display: flex;
+      align-items: center;
     }
 
     .ticker-track {
       display: inline-block;
       white-space: nowrap;
-      padding-left: 100%;
-      animation: tickerScroll 40s linear infinite;
       will-change: transform;
+      transform: translateX(0);
     }
 
     .ticker-text {
       display: inline-block;
       color: #ffffff;
-      font-size: 32px;
+      font-size: 40px;
       font-weight: 700;
       letter-spacing: 0.3px;
       text-shadow: 0 0 10px rgba(0,0,0,0.45);
-      padding-right: 80px;
-    }
-
-    .ticker-sep {
-      display: inline-block;
-      color: #ff4d4d;
-      font-size: 32px;
-      font-weight: 700;
-      padding: 0 26px;
+      padding-right: 40px;
+      white-space: nowrap;
     }
 
     .qr-box {
       position: absolute;
-      right: 14px;
-      bottom: 10px;
-      width: 90px;
-      height: 90px;
+      right: 16px;
+      bottom: 18px;
+      width: 104px;
+      height: 104px;
       border-radius: 12px;
-      background: rgba(255,255,255,0.94);
+      background: rgba(255,255,255,0.96);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -173,24 +189,25 @@
     }
 
     .qr-box img {
-      width: 84px;
-      height: 84px;
+      width: 96px;
+      height: 96px;
       object-fit: contain;
       display: block;
     }
 
-    @keyframes tickerScroll {
-      0% {
-        transform: translateX(0);
-      }
-      100% {
-        transform: translateX(-100%);
-      }
-    }
-
     @media (orientation: portrait) {
+      :root {
+        --clockTop: 18px;
+        --clockRight: 20px;
+        --clockHeight: 86px;
+        --topGapBelowClock: 8px;
+
+        --tickerHeight: 132px;
+        --tickerQrSpace: 150px;
+      }
+
       .clock-box {
-        min-width: 150px;
+        min-width: 170px;
         padding: 8px 12px;
       }
 
@@ -203,30 +220,18 @@
         font-size: 12px;
       }
 
-      .ticker-bar {
-        height: 130px;
-        padding-right: 118px;
-      }
-
-      .ticker-wrap {
-        right: 118px;
-      }
-
-      .ticker-text,
-      .ticker-sep {
-        font-size: 30px;
+      .ticker-text {
+        font-size: 42px;
       }
 
       .qr-box {
-        right: 12px;
-        bottom: 18px;
-        width: 88px;
-        height: 88px;
+        width: 102px;
+        height: 102px;
       }
 
       .qr-box img {
-        width: 80px;
-        height: 80px;
+        width: 94px;
+        height: 94px;
       }
     }
   </style>
@@ -267,13 +272,19 @@
     const reloadInterval = 300000;
     const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
 
+    // Pasek dolny
     const tickerItems = [
       "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
-      "Informacje i aktualności znajdą Państwo na naszych ekranach oraz w mediach MOKSiAL",
       "MOKSiAL, ul. Słowackiego 13 - godziny działania: poniedziałek-piątek 8:00-16:00",
       "4Peron - godziny działania: według repertuaru i harmonogramu wydarzeń",
-      "Zapraszamy na koncerty, spektakle, kino, warsztaty i spotkania"
+      "Zapraszamy na koncerty, spektakle, kino, warsztaty i spotkania",
+      "Chcesz wiedzieć więcej? Wejdź na naszą stronę www.moksial.pl lub zeskanuj kod QR >>>"
     ];
+
+    // prędkość paska w px/s
+    const tickerSpeed = 55;
+    // pauza po dojściu końcówki do QR
+    const tickerPauseMs = 5000;
 
     let images = [];
     let currentIndex = 0;
@@ -286,7 +297,18 @@
     const messageBox = document.getElementById("message");
     const clockEl = document.getElementById("clock");
     const dateEl = document.getElementById("date");
+
+    const tickerTrack = document.getElementById("tickerTrack");
     const tickerTextEl = document.getElementById("tickerText");
+    const tickerWrap = document.querySelector(".ticker-wrap");
+
+    let tickerAnimationFrame = null;
+    let tickerPauseTimeout = null;
+    let tickerX = 0;
+    let lastTickerTs = 0;
+    let tickerTextWidth = 0;
+    let tickerWrapWidth = 0;
+    let tickerRunning = false;
 
     const transitions = [
       { name: "fade", inDuration: 1800, outDuration: 1400 },
@@ -296,11 +318,6 @@
       { name: "slide-up", inDuration: 1600, outDuration: 1200 },
       { name: "soft-rotate", inDuration: 1800, outDuration: 1400 }
     ];
-
-    function buildTickerText() {
-      const separator = '  ✦  ';
-      tickerTextEl.textContent = tickerItems.join(separator) + separator + tickerItems.join(separator);
-    }
 
     function showMessage(text, isError = false) {
       messageBox.textContent = text;
@@ -329,6 +346,60 @@
 
       clockEl.textContent = time;
       dateEl.textContent = date;
+    }
+
+    function buildTickerText() {
+      const separator = "   ✦   ";
+      tickerTextEl.textContent = tickerItems.join(separator);
+    }
+
+    function setupTickerMeasurements() {
+      tickerTrack.style.transform = "translateX(0px)";
+      tickerTextWidth = tickerTextEl.offsetWidth;
+      tickerWrapWidth = tickerWrap.offsetWidth;
+      tickerX = tickerWrapWidth;
+      tickerTrack.style.transform = `translateX(${tickerX}px)`;
+    }
+
+    function tickerStep(timestamp) {
+      if (!tickerRunning) return;
+
+      if (!lastTickerTs) lastTickerTs = timestamp;
+      const delta = (timestamp - lastTickerTs) / 1000;
+      lastTickerTs = timestamp;
+
+      tickerX -= tickerSpeed * delta;
+      tickerTrack.style.transform = `translateX(${tickerX}px)`;
+
+      // gdy cały tekst zjedzie do końca
+      if (tickerX <= -tickerTextWidth) {
+        tickerRunning = false;
+        tickerTrack.style.transform = `translateX(${-tickerTextWidth}px)`;
+
+        tickerPauseTimeout = setTimeout(() => {
+          tickerX = tickerWrapWidth;
+          tickerTrack.style.transform = `translateX(${tickerX}px)`;
+          lastTickerTs = 0;
+          tickerRunning = true;
+          tickerAnimationFrame = requestAnimationFrame(tickerStep);
+        }, tickerPauseMs);
+
+        return;
+      }
+
+      tickerAnimationFrame = requestAnimationFrame(tickerStep);
+    }
+
+    function startTicker() {
+      if (tickerAnimationFrame) cancelAnimationFrame(tickerAnimationFrame);
+      if (tickerPauseTimeout) clearTimeout(tickerPauseTimeout);
+
+      buildTickerText();
+      setupTickerMeasurements();
+
+      tickerRunning = true;
+      lastTickerTs = 0;
+      tickerAnimationFrame = requestAnimationFrame(tickerStep);
     }
 
     function getActiveSlide() {
@@ -506,11 +577,13 @@
       first.src = images[currentIndex];
     }
 
-    buildTickerText();
     updateClock();
     setInterval(updateClock, 1000);
 
     loadImages();
+    startTicker();
+    window.addEventListener("resize", startTicker);
+
     setInterval(() => location.reload(), reloadInterval);
   </script>
 </body>
