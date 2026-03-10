@@ -25,7 +25,7 @@
       --clockHeight: 88px;
       --topGapBelowClock: 8px;
 
-      --tickerHeight: 130px;
+      --tickerHeight: 190px;
       --tickerQrSpace: 210px;
 
       --slideTop: calc(var(--clockTop) + var(--clockHeight) + var(--topGapBelowClock));
@@ -165,7 +165,7 @@
     .ticker-text {
       display: inline-block;
       color: #ffffff;
-      font-size: 40px;
+      font-size: 44px;
       font-weight: 700;
       letter-spacing: 0.3px;
       text-shadow: 0 0 10px rgba(0,0,0,0.45);
@@ -215,7 +215,7 @@
         --clockHeight: 86px;
         --topGapBelowClock: 8px;
 
-        --tickerHeight: 132px;
+        --tickerHeight: 190px;
         --tickerQrSpace: 210px;
       }
 
@@ -238,8 +238,8 @@
       }
 
       .qr-box {
-        right: 8px;
-        bottom: 8px;
+        right: 10px;
+        bottom: 10px;
         width: 170px;
         height: 170px;
       }
@@ -287,7 +287,6 @@
     const reloadInterval = 300000;
     const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
 
-    // Pasek dolny
     const tickerItems = [
       "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
       "MOKSiAL, ul. Słowackiego 13 - godziny działania: poniedziałek-piątek 8:00-16:00",
@@ -296,9 +295,7 @@
       "Chcesz wiedzieć więcej? Wejdź na naszą stronę www.moksial.pl lub zeskanuj kod QR >>>"
     ];
 
-    // prędkość paska w px/s
     const tickerSpeed = 55;
-    // pauza po dojściu końcówki do QR
     const tickerPauseMs = 5000;
 
     let images = [];
