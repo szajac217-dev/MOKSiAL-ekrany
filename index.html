@@ -26,7 +26,7 @@
       --topGapBelowClock: 8px;
 
       --tickerHeight: 130px;
-      --tickerQrSpace: 150px;
+      --tickerQrSpace: 210px;
 
       --slideTop: calc(var(--clockTop) + var(--clockHeight) + var(--topGapBelowClock));
       --slideBottom: var(--tickerHeight);
@@ -175,24 +175,37 @@
 
     .qr-box {
       position: absolute;
-      right: 16px;
-      bottom: 18px;
-      width: 104px;
-      height: 104px;
-      border-radius: 12px;
+      right: 10px;
+      bottom: 10px;
+      width: 170px;
+      height: 170px;
+      border-radius: 18px;
       background: rgba(255,255,255,0.96);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.55);
+      animation: qrPulse 4s ease-in-out infinite;
     }
 
     .qr-box img {
-      width: 96px;
-      height: 96px;
+      width: 150px;
+      height: 150px;
       object-fit: contain;
       display: block;
+    }
+
+    @keyframes qrPulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
     }
 
     @media (orientation: portrait) {
@@ -203,7 +216,7 @@
         --topGapBelowClock: 8px;
 
         --tickerHeight: 132px;
-        --tickerQrSpace: 150px;
+        --tickerQrSpace: 210px;
       }
 
       .clock-box {
@@ -225,13 +238,15 @@
       }
 
       .qr-box {
-        width: 102px;
-        height: 102px;
+        right: 8px;
+        bottom: 8px;
+        width: 170px;
+        height: 170px;
       }
 
       .qr-box img {
-        width: 94px;
-        height: 94px;
+        width: 150px;
+        height: 150px;
       }
     }
   </style>
@@ -371,7 +386,6 @@
       tickerX -= tickerSpeed * delta;
       tickerTrack.style.transform = `translateX(${tickerX}px)`;
 
-      // gdy cały tekst zjedzie do końca
       if (tickerX <= -tickerTextWidth) {
         tickerRunning = false;
         tickerTrack.style.transform = `translateX(${-tickerTextWidth}px)`;
