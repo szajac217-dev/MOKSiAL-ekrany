@@ -84,19 +84,6 @@
       letter-spacing: 0.4px;
     }
 
-    .status {
-      position: absolute;
-      left: 20px;
-      bottom: 18px;
-      z-index: 50;
-      color: rgba(255, 255, 255, 0.78);
-      font-size: 14px;
-      background: rgba(0, 0, 0, 0.34);
-      padding: 8px 12px;
-      border-radius: 10px;
-      backdrop-filter: blur(4px);
-    }
-
     .message {
       position: absolute;
       inset: 0;
@@ -114,6 +101,134 @@
     .error {
       color: #ffb0b0;
     }
+
+    .ticker-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 110px;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(
+        90deg,
+        rgba(10, 10, 10, 0.95) 0%,
+        rgba(18, 18, 18, 0.92) 50%,
+        rgba(10, 10, 10, 0.95) 100%
+      );
+      border-top: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(6px);
+      overflow: hidden;
+      padding-right: 120px;
+    }
+
+    .ticker-wrap {
+      position: absolute;
+      left: 0;
+      right: 120px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .ticker-track {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: tickerScroll 40s linear infinite;
+      will-change: transform;
+    }
+
+    .ticker-text {
+      display: inline-block;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-shadow: 0 0 10px rgba(0,0,0,0.45);
+      padding-right: 80px;
+    }
+
+    .ticker-sep {
+      display: inline-block;
+      color: #ff4d4d;
+      font-size: 32px;
+      font-weight: 700;
+      padding: 0 26px;
+    }
+
+    .qr-box {
+      position: absolute;
+      right: 14px;
+      bottom: 10px;
+      width: 90px;
+      height: 90px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.94);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+
+    .qr-box img {
+      width: 84px;
+      height: 84px;
+      object-fit: contain;
+      display: block;
+    }
+
+    @keyframes tickerScroll {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+
+    @media (orientation: portrait) {
+      .clock-box {
+        min-width: 150px;
+        padding: 8px 12px;
+      }
+
+      .clock {
+        font-size: 38px;
+        letter-spacing: 3px;
+      }
+
+      .date {
+        font-size: 12px;
+      }
+
+      .ticker-bar {
+        height: 130px;
+        padding-right: 118px;
+      }
+
+      .ticker-wrap {
+        right: 118px;
+      }
+
+      .ticker-text,
+      .ticker-sep {
+        font-size: 30px;
+      }
+
+      .qr-box {
+        right: 12px;
+        bottom: 18px;
+        width: 88px;
+        height: 88px;
+      }
+
+      .qr-box img {
+        width: 80px;
+        height: 80px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -128,7 +243,18 @@
       </div>
     </div>
 
-    <div id="status" class="status">Ładowanie plakatów...</div>
+    <div class="ticker-bar">
+      <div class="ticker-wrap">
+        <div class="ticker-track" id="tickerTrack">
+          <span class="ticker-text" id="tickerText"></span>
+        </div>
+      </div>
+
+      <div class="qr-box" id="qrBox">
+        <img src="qr.png" alt="Kod QR" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
     <div id="message" class="message">Ładowanie plakatów...</div>
   </div>
 
@@ -141,6 +267,14 @@
     const reloadInterval = 300000;
     const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
 
+    const tickerItems = [
+      "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
+      "Informacje i aktualności znajdą Państwo na naszych ekranach oraz w mediach MOKSiAL",
+      "MOKSiAL, ul. Słowackiego 13 - godziny działania: poniedziałek-piątek 8:00-16:00",
+      "4Peron - godziny działania: według repertuaru i harmonogramu wydarzeń",
+      "Zapraszamy na koncerty, spektakle, kino, warsztaty i spotkania"
+    ];
+
     let images = [];
     let currentIndex = 0;
     let activeSlide = 0;
@@ -149,10 +283,10 @@
 
     const slideA = document.getElementById("slideA");
     const slideB = document.getElementById("slideB");
-    const statusBox = document.getElementById("status");
     const messageBox = document.getElementById("message");
     const clockEl = document.getElementById("clock");
     const dateEl = document.getElementById("date");
+    const tickerTextEl = document.getElementById("tickerText");
 
     const transitions = [
       { name: "fade", inDuration: 1800, outDuration: 1400 },
@@ -163,8 +297,9 @@
       { name: "soft-rotate", inDuration: 1800, outDuration: 1400 }
     ];
 
-    function setStatus(text) {
-      statusBox.textContent = text;
+    function buildTickerText() {
+      const separator = '  ✦  ';
+      tickerTextEl.textContent = tickerItems.join(separator) + separator + tickerItems.join(separator);
     }
 
     function showMessage(text, isError = false) {
@@ -300,19 +435,14 @@
       const transition = getRandomTransition();
 
       next.onload = () => {
-        const currentName = images[currentIndex].split("/").pop();
         applyTransition(next, current, transition);
-
         activeSlide = activeSlide === 0 ? 1 : 0;
         currentIndex = (currentIndex + 1) % images.length;
-
-        setStatus(`Plakat: ${currentName} | Przejście: ${transition.name}`);
         scheduleNextSlide();
       };
 
       next.onerror = () => {
         currentIndex = (currentIndex + 1) % images.length;
-        setStatus("Pominięto uszkodzony plakat");
         scheduleNextSlide();
       };
 
@@ -344,7 +474,6 @@
         }
 
         hideMessage();
-        setStatus(`Załadowano plakatów: ${images.length}`);
 
         if (!slideshowStarted) {
           startSlideshow();
@@ -356,7 +485,6 @@
           `Nie udało się pobrać plakatów z folderu "${folder}". Proszę sprawdzić nazwę repozytorium, nazwę folderu i czy GitHub Pages jest włączone.`,
           true
         );
-        setStatus("Błąd ładowania");
       }
     }
 
@@ -367,22 +495,18 @@
         first.style.transition = "opacity 1200ms ease-in-out";
         first.style.opacity = "1";
         first.classList.add("visible");
-
-        const firstName = images[currentIndex].split("/").pop();
-        setStatus(`Plakat: ${firstName} | Start`);
         currentIndex = (currentIndex + 1) % images.length;
-
         scheduleNextSlide();
       };
 
       first.onerror = () => {
         showMessage("Nie udało się załadować pierwszego plakatu.", true);
-        setStatus("Błąd pierwszego plakatu");
       };
 
       first.src = images[currentIndex];
     }
 
+    buildTickerText();
     updateClock();
     setInterval(updateClock, 1000);
 
