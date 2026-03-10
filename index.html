@@ -1,233 +1,274 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<title>MOKSIAL - Ekrany</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOKSiAL - Ekrany informacyjne</title>
 
-<style>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-body{
-margin:0;
-background:black;
-overflow:hidden;
-font-family:Arial, sans-serif;
-}
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-#background{
-position:fixed;
-width:100%;
-height:100%;
-z-index:0;
-transition:background 3s ease;
-}
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+    }
 
-#slideshow{
-position:absolute;
-width:100%;
-height:100%;
-display:flex;
-align-items:center;
-justify-content:center;
-z-index:2;
-}
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      transition:
+        opacity 2s ease-in-out,
+        transform 8s linear;
+      transform: scale(1.015);
+      will-change: opacity, transform;
+      background: #000;
+    }
 
-#slide{
-max-width:100%;
-max-height:100%;
-object-fit:contain;
-opacity:0;
-transition:opacity 2s ease-in-out;
-animation:zoom 20s linear forwards;
-}
+    .slide.visible {
+      opacity: 1;
+      transform: scale(1.0);
+    }
 
-@keyframes zoom{
-from{transform:scale(1)}
-to{transform:scale(1.05)}
-}
+    .overlay-top {
+      position: absolute;
+      top: 18px;
+      right: 22px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: none;
+    }
 
-#clock{
-position:absolute;
-top:20px;
-right:30px;
-color:white;
-font-size:40px;
-font-weight:bold;
-z-index:3;
-}
+    .clock-box {
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 10px 16px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    }
 
-#ticker{
-position:absolute;
-bottom:0;
-width:100%;
-background:rgba(0,0,0,0.6);
-color:white;
-font-size:28px;
-padding:15px;
-white-space:nowrap;
-overflow:hidden;
-z-index:3;
-}
+    .clock {
+      color: #ff3b3b;
+      font-size: 48px;
+      line-height: 1;
+      letter-spacing: 4px;
+      text-shadow:
+        0 0 5px rgba(255, 59, 59, 0.7),
+        0 0 12px rgba(255, 59, 59, 0.45),
+        0 0 24px rgba(255, 59, 59, 0.25);
+      font-family: "Courier New", Courier, monospace;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
 
-#ticker span{
-display:inline-block;
-padding-left:100%;
-animation:ticker 20s linear infinite;
-}
+    .date {
+      margin-top: 6px;
+      color: rgba(255,255,255,0.88);
+      font-size: 14px;
+      text-align: right;
+      letter-spacing: 0.5px;
+    }
 
-@keyframes ticker{
-from{transform:translateX(0)}
-to{transform:translateX(-100%)}
-}
+    .status {
+      position: absolute;
+      left: 20px;
+      bottom: 18px;
+      z-index: 20;
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      background: rgba(0,0,0,0.35);
+      padding: 8px 12px;
+      border-radius: 10px;
+      backdrop-filter: blur(4px);
+    }
 
-/* pionowe ekrany */
+    .loading,
+    .error {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      text-align: center;
+      padding: 30px;
+      z-index: 5;
+    }
 
-@media (orientation: portrait){
-
-#slide{
-max-width:100%;
-max-height:90%;
-}
-
-#clock{
-font-size:28px;
-top:10px;
-right:15px;
-}
-
-#ticker{
-font-size:20px;
-padding:10px;
-}
-
-}
-
-</style>
+    .error {
+      color: #ffb3b3;
+    }
+  </style>
 </head>
-
 <body>
+  <div id="app">
+    <img id="slideA" class="slide visible" alt="Plakat A">
+    <img id="slideB" class="slide" alt="Plakat B">
 
-<div id="background"></div>
+    <div class="overlay-top">
+      <div class="clock-box">
+        <div id="clock" class="clock">00:00</div>
+        <div id="date" class="date">--</div>
+      </div>
+    </div>
 
-<div id="slideshow">
-<img id="slide">
-</div>
+    <div id="status" class="status">Ładowanie plakatów...</div>
+    <div id="loading" class="loading">Ładowanie plakatów...</div>
+  </div>
 
-<div id="clock"></div>
+  <script>
+    const owner = "szajac217-dev";
+    const repo = "MOKSIAL-ekrany";
+    const folder = "Plakaty";
 
-<div id="ticker">
-<span>Zapraszamy na wydarzenia w MOKSiAL • Kino za Rogiem • Koncerty • Warsztaty • Wystawy</span>
-</div>
+    const slideDuration = 8000;     // cały czas jednego plakatu
+    const reloadInterval = 300000;  // odświeżenie strony co 5 min
+    const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
 
-<script>
+    let images = [];
+    let currentIndex = 0;
+    let activeSlide = 0;
+    let slideshowStarted = false;
 
-const owner="szajac217-dev"
-const repo="MOKSIAL-ekrany"
-const folder="Plakaty"
+    const slideA = document.getElementById("slideA");
+    const slideB = document.getElementById("slideB");
+    const statusBox = document.getElementById("status");
+    const loadingBox = document.getElementById("loading");
+    const clockEl = document.getElementById("clock");
+    const dateEl = document.getElementById("date");
 
-let images=[]
-let index=0
+    function updateClock() {
+      const now = new Date();
 
-async function loadImages(){
+      const time = now.toLocaleTimeString("pl-PL", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
 
-const url=`https://api.github.com/repos/${owner}/${repo}/contents/${folder}`
+      const date = now.toLocaleDateString("pl-PL", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
 
-const response=await fetch(url)
-const data=await response.json()
+      clockEl.textContent = time;
+      dateEl.textContent = date;
+    }
 
-images=data
-.filter(file=>file.name.match(/\.(jpg|jpeg|png|webp)$/i))
-.map(file=>file.download_url)
+    function setStatus(text) {
+      statusBox.textContent = text;
+    }
 
-startSlideshow()
+    function showError(message) {
+      loadingBox.className = "error";
+      loadingBox.textContent = message;
+      setStatus("Błąd");
+    }
 
-}
+    async function loadImages() {
+      try {
+        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(folder)}`;
+        const response = await fetch(url, { cache: "no-store" });
 
-function startSlideshow(){
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
 
-showSlide()
+        const data = await response.json();
 
-setInterval(showSlide,10000)
+        if (!Array.isArray(data)) {
+          throw new Error("Nieprawidłowa odpowiedź API");
+        }
 
-}
+        images = data
+          .filter(file => file.type === "file" && validExtensions.test(file.name))
+          .map(file => file.download_url)
+          .filter(Boolean);
 
-function showSlide(){
+        if (images.length === 0) {
+          throw new Error(`Brak plakatów w folderze "${folder}"`);
+        }
 
-const img=document.getElementById("slide")
+        loadingBox.style.display = "none";
+        setStatus(`Załadowano plakatów: ${images.length}`);
 
-img.style.opacity=0
+        if (!slideshowStarted) {
+          startSlideshow();
+          slideshowStarted = true;
+        }
+      } catch (error) {
+        console.error(error);
+        showError(
+          `Nie udało się pobrać plakatów z folderu "${folder}". Sprawdź nazwę repozytorium, folderu oraz czy GitHub Pages jest włączone.`
+        );
+      }
+    }
 
-setTimeout(()=>{
+    function getActiveSlide() {
+      return activeSlide === 0 ? slideA : slideB;
+    }
 
-img.src=images[index]
+    function getInactiveSlide() {
+      return activeSlide === 0 ? slideB : slideA;
+    }
 
-generateBackground(img)
+    function showNextSlide() {
+      if (!images.length) return;
 
-img.style.opacity=1
+      const current = getActiveSlide();
+      const next = getInactiveSlide();
 
-index++
+      next.src = images[currentIndex];
+      next.onload = () => {
+        next.classList.add("visible");
+        current.classList.remove("visible");
 
-if(index>=images.length){
-index=0
-}
+        activeSlide = activeSlide === 0 ? 1 : 0;
+        currentIndex = (currentIndex + 1) % images.length;
+      };
 
-},1000)
+      next.onerror = () => {
+        currentIndex = (currentIndex + 1) % images.length;
+      };
+    }
 
-}
+    function startSlideshow() {
+      const first = getActiveSlide();
+      first.src = images[currentIndex];
+      first.onload = () => {
+        first.classList.add("visible");
+        currentIndex = (currentIndex + 1) % images.length;
+      };
 
-function generateBackground(img){
+      setInterval(showNextSlide, slideDuration);
+    }
 
-img.onload=function(){
+    updateClock();
+    setInterval(updateClock, 1000);
 
-const canvas=document.createElement("canvas")
-const ctx=canvas.getContext("2d")
-
-canvas.width=50
-canvas.height=50
-
-ctx.drawImage(img,0,0,50,50)
-
-const data=ctx.getImageData(0,0,50,50).data
-
-let r=0,g=0,b=0,count=0
-
-for(let i=0;i<data.length;i+=4){
-
-r+=data[i]
-g+=data[i+1]
-b+=data[i+2]
-count++
-
-}
-
-r=Math.floor(r/count)
-g=Math.floor(g/count)
-b=Math.floor(b/count)
-
-document.getElementById("background").style.background=
-`linear-gradient(135deg, rgb(${r},${g},${b}), black)`
-
-}
-
-}
-
-function updateClock(){
-
-const now=new Date()
-
-let h=now.getHours().toString().padStart(2,"0")
-let m=now.getMinutes().toString().padStart(2,"0")
-
-document.getElementById("clock").innerText=`${h}:${m}`
-
-}
-
-setInterval(updateClock,1000)
-
-updateClock()
-
-loadImages()
-
-</script>
-
+    loadImages();
+    setInterval(() => location.reload(), reloadInterval);
+  </script>
 </body>
 </html>
