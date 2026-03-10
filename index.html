@@ -169,7 +169,7 @@
       font-weight: 700;
       letter-spacing: 0.3px;
       text-shadow: 0 0 10px rgba(0,0,0,0.45);
-      padding-right: 40px;
+      padding-right: 0;
       white-space: nowrap;
     }
 
@@ -197,15 +197,9 @@
     }
 
     @keyframes qrPulse {
-      0% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.05);
-      }
-      100% {
-        transform: scale(1);
-      }
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
 
     @media (orientation: portrait) {
@@ -214,7 +208,6 @@
         --clockRight: 20px;
         --clockHeight: 86px;
         --topGapBelowClock: 8px;
-
         --tickerHeight: 190px;
         --tickerQrSpace: 210px;
       }
@@ -295,7 +288,7 @@
       "Chcesz wiedzieć więcej? Wejdź na naszą stronę www.moksial.pl lub zeskanuj kod QR >>>"
     ];
 
-    const tickerSpeed = 100;
+    const tickerSpeed = 55;
     const tickerPauseMs = 5000;
 
     let images = [];
@@ -321,6 +314,7 @@
     let tickerTextWidth = 0;
     let tickerWrapWidth = 0;
     let tickerRunning = false;
+    let tickerStopX = 0;
 
     const transitions = [
       { name: "fade", inDuration: 1800, outDuration: 1400 },
@@ -367,10 +361,31 @@
 
     function setupTickerMeasurements() {
       tickerTrack.style.transform = "translateX(0px)";
+
       tickerTextWidth = tickerTextEl.offsetWidth;
       tickerWrapWidth = tickerWrap.offsetWidth;
+
+      // start od prawej strony obszaru tekstu
       tickerX = tickerWrapWidth;
+
+      // zatrzymanie wtedy, gdy KONIEC tekstu dojedzie do prawej krawędzi obszaru tekstowego
+      // czyli końcówka z >>> będzie tuż przed QR
+      tickerStopX = tickerWrapWidth - tickerTextWidth;
+
       tickerTrack.style.transform = `translateX(${tickerX}px)`;
+    }
+
+    function pauseTickerAndRestart() {
+      tickerRunning = false;
+      tickerTrack.style.transform = `translateX(${tickerStopX}px)`;
+
+      tickerPauseTimeout = setTimeout(() => {
+        tickerX = tickerWrapWidth;
+        tickerTrack.style.transform = `translateX(${tickerX}px)`;
+        lastTickerTs = 0;
+        tickerRunning = true;
+        tickerAnimationFrame = requestAnimationFrame(tickerStep);
+      }, tickerPauseMs);
     }
 
     function tickerStep(timestamp) {
@@ -381,23 +396,13 @@
       lastTickerTs = timestamp;
 
       tickerX -= tickerSpeed * delta;
-      tickerTrack.style.transform = `translateX(${tickerX}px)`;
 
-      if (tickerX <= -tickerTextWidth) {
-        tickerRunning = false;
-        tickerTrack.style.transform = `translateX(${-tickerTextWidth}px)`;
-
-        tickerPauseTimeout = setTimeout(() => {
-          tickerX = tickerWrapWidth;
-          tickerTrack.style.transform = `translateX(${tickerX}px)`;
-          lastTickerTs = 0;
-          tickerRunning = true;
-          tickerAnimationFrame = requestAnimationFrame(tickerStep);
-        }, tickerPauseMs);
-
+      if (tickerX <= tickerStopX) {
+        pauseTickerAndRestart();
         return;
       }
 
+      tickerTrack.style.transform = `translateX(${tickerX}px)`;
       tickerAnimationFrame = requestAnimationFrame(tickerStep);
     }
 
