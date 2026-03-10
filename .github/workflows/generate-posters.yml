@@ -1,0 +1,59 @@
+name: Generate plakaty.json
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-posters-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Generate plakaty.json
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          import json
+
+          folder = "Plakaty"
+          allowed = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+          files = []
+          if os.path.isdir(folder):
+              for name in sorted(os.listdir(folder)):
+                  path = os.path.join(folder, name)
+                  ext = os.path.splitext(name)[1].lower()
+                  if os.path.isfile(path) and ext in allowed:
+                      files.append(f"{folder}/{name}")
+
+          with open("plakaty.json", "w", encoding="utf-8") as f:
+              json.dump(files, f, ensure_ascii=False, indent=2)
+              f.write("\n")
+
+          print("Wygenerowano plakaty.json:")
+          print(json.dumps(files, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Commit and push if changed
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add plakaty.json
+
+          if git diff --cached --quiet; then
+            echo "Brak zmian w plakaty.json"
+          else
+            git commit -m "Automatyczna aktualizacja plakaty.json"
+            git push
+          fi
