@@ -23,6 +23,7 @@
       position: relative;
       width: 100vw;
       height: 100vh;
+      overflow: hidden;
       background: #000;
     }
 
@@ -33,90 +34,85 @@
       height: 100%;
       object-fit: contain;
       opacity: 0;
-      transition:
-        opacity 2s ease-in-out,
-        transform 8s linear;
-      transform: scale(1.015);
+      transform: translateX(0) translateY(0) scale(1) rotate(0deg);
       will-change: opacity, transform;
       background: #000;
     }
 
-    .slide.visible {
+    .visible {
       opacity: 1;
-      transform: scale(1.0);
     }
 
     .overlay-top {
       position: absolute;
       top: 18px;
       right: 22px;
-      z-index: 20;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      z-index: 50;
       pointer-events: none;
     }
 
     .clock-box {
-      background: rgba(0, 0, 0, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.42);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px;
       padding: 10px 16px;
       backdrop-filter: blur(6px);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      min-width: 180px;
     }
 
     .clock {
-      color: #ff3b3b;
-      font-size: 48px;
+      color: #ff4d4d;
+      font-size: 46px;
       line-height: 1;
       letter-spacing: 4px;
-      text-shadow:
-        0 0 5px rgba(255, 59, 59, 0.7),
-        0 0 12px rgba(255, 59, 59, 0.45),
-        0 0 24px rgba(255, 59, 59, 0.25);
-      font-family: "Courier New", Courier, monospace;
+      font-family: "Courier New", monospace;
       font-weight: 700;
+      text-align: right;
       font-variant-numeric: tabular-nums;
+      text-shadow:
+        0 0 4px rgba(255, 77, 77, 0.75),
+        0 0 10px rgba(255, 77, 77, 0.45),
+        0 0 18px rgba(255, 77, 77, 0.25);
     }
 
     .date {
       margin-top: 6px;
-      color: rgba(255,255,255,0.88);
+      color: rgba(255, 255, 255, 0.88);
       font-size: 14px;
       text-align: right;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
     }
 
     .status {
       position: absolute;
       left: 20px;
       bottom: 18px;
-      z-index: 20;
-      color: rgba(255,255,255,0.7);
+      z-index: 50;
+      color: rgba(255, 255, 255, 0.78);
       font-size: 14px;
-      background: rgba(0,0,0,0.35);
+      background: rgba(0, 0, 0, 0.34);
       padding: 8px 12px;
       border-radius: 10px;
       backdrop-filter: blur(4px);
     }
 
-    .loading,
-    .error {
+    .message {
       position: absolute;
       inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-size: 24px;
       text-align: center;
       padding: 30px;
-      z-index: 5;
+      color: white;
+      font-size: 24px;
+      z-index: 30;
+      background: #000;
     }
 
     .error {
-      color: #ffb3b3;
+      color: #ffb0b0;
     }
   </style>
 </head>
@@ -133,7 +129,7 @@
     </div>
 
     <div id="status" class="status">Ładowanie plakatów...</div>
-    <div id="loading" class="loading">Ładowanie plakatów...</div>
+    <div id="message" class="message">Ładowanie plakatów...</div>
   </div>
 
   <script>
@@ -141,21 +137,45 @@
     const repo = "MOKSIAL-ekrany";
     const folder = "Plakaty";
 
-    const slideDuration = 8000;     // cały czas jednego plakatu
-    const reloadInterval = 300000;  // odświeżenie strony co 5 min
+    const slideDuration = 8000;
+    const reloadInterval = 300000;
     const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
 
     let images = [];
     let currentIndex = 0;
     let activeSlide = 0;
     let slideshowStarted = false;
+    let currentTimer = null;
 
     const slideA = document.getElementById("slideA");
     const slideB = document.getElementById("slideB");
     const statusBox = document.getElementById("status");
-    const loadingBox = document.getElementById("loading");
+    const messageBox = document.getElementById("message");
     const clockEl = document.getElementById("clock");
     const dateEl = document.getElementById("date");
+
+    const transitions = [
+      { name: "fade", inDuration: 1800, outDuration: 1400 },
+      { name: "zoom", inDuration: 2200, outDuration: 1600 },
+      { name: "slide-left", inDuration: 1600, outDuration: 1200 },
+      { name: "slide-right", inDuration: 1600, outDuration: 1200 },
+      { name: "slide-up", inDuration: 1600, outDuration: 1200 },
+      { name: "soft-rotate", inDuration: 1800, outDuration: 1400 }
+    ];
+
+    function setStatus(text) {
+      statusBox.textContent = text;
+    }
+
+    function showMessage(text, isError = false) {
+      messageBox.textContent = text;
+      messageBox.className = isError ? "message error" : "message";
+      messageBox.style.display = "flex";
+    }
+
+    function hideMessage() {
+      messageBox.style.display = "none";
+    }
 
     function updateClock() {
       const now = new Date();
@@ -176,14 +196,127 @@
       dateEl.textContent = date;
     }
 
-    function setStatus(text) {
-      statusBox.textContent = text;
+    function getActiveSlide() {
+      return activeSlide === 0 ? slideA : slideB;
     }
 
-    function showError(message) {
-      loadingBox.className = "error";
-      loadingBox.textContent = message;
-      setStatus("Błąd");
+    function getInactiveSlide() {
+      return activeSlide === 0 ? slideB : slideA;
+    }
+
+    function resetSlideState(slide) {
+      slide.classList.remove("visible");
+      slide.style.transition = "none";
+      slide.style.opacity = "0";
+      slide.style.transform = "translateX(0) translateY(0) scale(1) rotate(0deg)";
+    }
+
+    function applyTransition(slideIn, slideOut, transition) {
+      resetSlideState(slideIn);
+
+      if (transition.name === "fade") {
+        slideIn.style.transform = "scale(1)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideOut.style.opacity = "0";
+      }
+
+      if (transition.name === "zoom") {
+        slideIn.style.transform = "scale(1.06)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out, transform ${slideDuration}ms linear`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "scale(1)";
+        slideOut.style.opacity = "0";
+      }
+
+      if (transition.name === "slide-left") {
+        slideIn.style.transform = "translateX(6%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateX(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateX(-3%)";
+      }
+
+      if (transition.name === "slide-right") {
+        slideIn.style.transform = "translateX(-6%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateX(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateX(3%)";
+      }
+
+      if (transition.name === "slide-up") {
+        slideIn.style.transform = "translateY(5%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateY(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateY(-2%)";
+      }
+
+      if (transition.name === "soft-rotate") {
+        slideIn.style.transform = "scale(1.02) rotate(-1deg)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out, transform ${transition.inDuration}ms ease-in-out`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out, transform ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "scale(1) rotate(0deg)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "scale(1.01) rotate(0.5deg)";
+      }
+
+      slideIn.classList.add("visible");
+      slideOut.classList.remove("visible");
+    }
+
+    function getRandomTransition() {
+      return transitions[Math.floor(Math.random() * transitions.length)];
+    }
+
+    function scheduleNextSlide() {
+      if (currentTimer) {
+        clearTimeout(currentTimer);
+      }
+      currentTimer = setTimeout(showNextSlide, slideDuration);
+    }
+
+    function showNextSlide() {
+      if (!images.length) return;
+
+      const current = getActiveSlide();
+      const next = getInactiveSlide();
+      const transition = getRandomTransition();
+
+      next.onload = () => {
+        const currentName = images[currentIndex].split("/").pop();
+        applyTransition(next, current, transition);
+
+        activeSlide = activeSlide === 0 ? 1 : 0;
+        currentIndex = (currentIndex + 1) % images.length;
+
+        setStatus(`Plakat: ${currentName} | Przejście: ${transition.name}`);
+        scheduleNextSlide();
+      };
+
+      next.onerror = () => {
+        currentIndex = (currentIndex + 1) % images.length;
+        setStatus("Pominięto uszkodzony plakat");
+        scheduleNextSlide();
+      };
+
+      next.src = images[currentIndex];
     }
 
     async function loadImages() {
@@ -210,7 +343,7 @@
           throw new Error(`Brak plakatów w folderze "${folder}"`);
         }
 
-        loadingBox.style.display = "none";
+        hideMessage();
         setStatus(`Załadowano plakatów: ${images.length}`);
 
         if (!slideshowStarted) {
@@ -219,49 +352,35 @@
         }
       } catch (error) {
         console.error(error);
-        showError(
-          `Nie udało się pobrać plakatów z folderu "${folder}". Sprawdź nazwę repozytorium, folderu oraz czy GitHub Pages jest włączone.`
+        showMessage(
+          `Nie udało się pobrać plakatów z folderu "${folder}". Proszę sprawdzić nazwę repozytorium, nazwę folderu i czy GitHub Pages jest włączone.`,
+          true
         );
+        setStatus("Błąd ładowania");
       }
-    }
-
-    function getActiveSlide() {
-      return activeSlide === 0 ? slideA : slideB;
-    }
-
-    function getInactiveSlide() {
-      return activeSlide === 0 ? slideB : slideA;
-    }
-
-    function showNextSlide() {
-      if (!images.length) return;
-
-      const current = getActiveSlide();
-      const next = getInactiveSlide();
-
-      next.src = images[currentIndex];
-      next.onload = () => {
-        next.classList.add("visible");
-        current.classList.remove("visible");
-
-        activeSlide = activeSlide === 0 ? 1 : 0;
-        currentIndex = (currentIndex + 1) % images.length;
-      };
-
-      next.onerror = () => {
-        currentIndex = (currentIndex + 1) % images.length;
-      };
     }
 
     function startSlideshow() {
       const first = getActiveSlide();
-      first.src = images[currentIndex];
+
       first.onload = () => {
+        first.style.transition = "opacity 1200ms ease-in-out";
+        first.style.opacity = "1";
         first.classList.add("visible");
+
+        const firstName = images[currentIndex].split("/").pop();
+        setStatus(`Plakat: ${firstName} | Start`);
         currentIndex = (currentIndex + 1) % images.length;
+
+        scheduleNextSlide();
       };
 
-      setInterval(showNextSlide, slideDuration);
+      first.onerror = () => {
+        showMessage("Nie udało się załadować pierwszego plakatu.", true);
+        setStatus("Błąd pierwszego plakatu");
+      };
+
+      first.src = images[currentIndex];
     }
 
     updateClock();
