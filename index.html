@@ -144,32 +144,37 @@
       color: #ffb0b0;
     }
 
-    .ticker-bar {
+    .top-bar {
   position: absolute;
+  top: 12px;
   left: 12px;
   right: 12px;
-  bottom: 12px;
-  height: var(--tickerHeight);
-  z-index: 60;
+  height: 78px;
+
   display: flex;
+  justify-content: flex-end;
   align-items: center;
+  padding-right: 20px;
+
   background:
     linear-gradient(90deg,
-      rgba(16, 22, 34, 0.70) 0%,
-      rgba(22, 28, 46, 0.58) 35%,
-      rgba(32, 22, 44, 0.54) 70%,
-      rgba(16, 22, 34, 0.70) 100%);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 22px;
-  backdrop-filter: blur(16px) saturate(135%);
-  -webkit-backdrop-filter: blur(16px) saturate(135%);
-  box-shadow:
-    0 12px 34px rgba(0,0,0,0.28),
-    inset 0 1px 0 rgba(255,255,255,0.10);
-  overflow: hidden;
-  padding-right: var(--tickerQrSpace);
-}
+      rgba(18, 28, 48, 0.60) 0%,
+      rgba(20, 24, 34, 0.48) 50%,
+      rgba(38, 20, 44, 0.42) 100%);
 
+  border-radius: 18px;
+
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+
+  border: 1px solid rgba(255,255,255,0.12);
+
+  box-shadow:
+    0 10px 34px rgba(0,0,0,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+
+  z-index: 40;
+}
 .ticker-bar::before {
   content: "";
   position: absolute;
@@ -299,12 +304,14 @@
     <img id="slideA" class="slide visible" alt="Plakat A">
     <img id="slideB" class="slide" alt="Plakat B">
 
-    <div class="overlay-top">
-      <div class="clock-box">
-        <div id="clock" class="clock">00:00</div>
-        <div id="date" class="date">--</div>
-      </div>
-    </div>
+    <div class="top-bar">
+
+  <div class="clock-box">
+    <div id="clock" class="clock">00:00</div>
+    <div id="date" class="date">--</div>
+  </div>
+
+</div>
 
     <div class="ticker-bar">
       <div class="ticker-wrap">
