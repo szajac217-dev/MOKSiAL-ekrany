@@ -479,7 +479,7 @@
       root.style.setProperty("--clock-color", config.clockColor || "#ff5b67");
       root.style.setProperty("--ticker-text-color", config.tickerTextColor || "#ffffff");
 
-      qrImage.src = config.qrImage;
+      qrImage.src = config.qrImage + "?v=" + Date.now();
     }
 
     function showMessage(text, isError = false) {
