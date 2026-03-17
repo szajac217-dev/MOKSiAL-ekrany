@@ -1,0 +1,29 @@
+{
+  "title": "Szklarska Poręba - Ekrany Miasta",
+  "postersJson": "plakaty-miasto.json",
+  "qrImage": "qr-miasto.png",
+  "clockColor": "#ffd36a",
+  "tickerTextColor": "#ffffff",
+  "tickerSpeed": 48,
+  "tickerPauseMs": 5000,
+  "tickerItems": [
+    "Zapraszamy do odkrywania atrakcji Szklarskiej Poręby",
+    "Aktualne wydarzenia, imprezy i atrakcje znajdą Państwo na miejskich ekranach informacyjnych",
+    "Szklarska Poręba - sprawdź kalendarz wydarzeń, atrakcje turystyczne i informacje dla odwiedzających",
+    "Chcesz wiedzieć więcej? Wejdź na stronę miasta lub zeskanuj kod QR >>>"
+  ],
+  "topGradient": [
+    "rgba(46, 96, 42, 0.48)",
+    "rgba(84, 122, 42, 0.38)",
+    "rgba(180, 115, 22, 0.28)",
+    "rgba(88, 132, 48, 0.34)",
+    "rgba(34, 66, 24, 0.54)"
+  ],
+  "bottomGradient": [
+    "rgba(34, 72, 30, 0.56)",
+    "rgba(82, 114, 38, 0.44)",
+    "rgba(172, 108, 26, 0.34)",
+    "rgba(96, 142, 52, 0.36)",
+    "rgba(28, 52, 20, 0.58)"
+  ]
+}
