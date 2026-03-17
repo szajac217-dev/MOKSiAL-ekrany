@@ -4,7 +4,7 @@
   "qrImage": "qr-miasto.png",
   "clockColor": "#ffd84d",
   "tickerTextColor": "#ffffff",
-  "tickerSpeed": 48,
+  "tickerSpeed": 75,
   "tickerPauseMs": 5000,
   "tickerItems": [
     "Zapraszamy do odkrywania atrakcji Szklarskiej Poręby",
