@@ -460,27 +460,38 @@
       applyConfig();
     }
 
-    function applyConfig() {
-      document.title = config.title || "Ekrany informacyjne";
+  function applyConfig() {
+  document.title = config.title || "Ekrany informacyjne";
 
-      const root = document.documentElement;
-      root.style.setProperty("--top-grad-1", config.topGradient[0]);
-      root.style.setProperty("--top-grad-2", config.topGradient[1]);
-      root.style.setProperty("--top-grad-3", config.topGradient[2]);
-      root.style.setProperty("--top-grad-4", config.topGradient[3]);
-      root.style.setProperty("--top-grad-5", config.topGradient[4]);
+  const root = document.documentElement;
+  root.style.setProperty("--top-grad-1", config.topGradient[0]);
+  root.style.setProperty("--top-grad-2", config.topGradient[1]);
+  root.style.setProperty("--top-grad-3", config.topGradient[2]);
+  root.style.setProperty("--top-grad-4", config.topGradient[3]);
+  root.style.setProperty("--top-grad-5", config.topGradient[4]);
 
-      root.style.setProperty("--bottom-grad-1", config.bottomGradient[0]);
-      root.style.setProperty("--bottom-grad-2", config.bottomGradient[1]);
-      root.style.setProperty("--bottom-grad-3", config.bottomGradient[2]);
-      root.style.setProperty("--bottom-grad-4", config.bottomGradient[3]);
-      root.style.setProperty("--bottom-grad-5", config.bottomGradient[4]);
+  root.style.setProperty("--bottom-grad-1", config.bottomGradient[0]);
+  root.style.setProperty("--bottom-grad-2", config.bottomGradient[1]);
+  root.style.setProperty("--bottom-grad-3", config.bottomGradient[2]);
+  root.style.setProperty("--bottom-grad-4", config.bottomGradient[3]);
+  root.style.setProperty("--bottom-grad-5", config.bottomGradient[4]);
 
-      root.style.setProperty("--clock-color", config.clockColor || "#ff5b67");
-      root.style.setProperty("--ticker-text-color", config.tickerTextColor || "#ffffff");
+  root.style.setProperty("--clock-color", config.clockColor || "#ff5b67");
+  root.style.setProperty("--ticker-text-color", config.tickerTextColor || "#ffffff");
 
-      qrImage.src = config.qrImage + "?v=" + Date.now();
-    }
+  const qrBox = document.getElementById("qrBox");
+  qrBox.style.display = "flex";
+
+  qrImage.onerror = () => {
+    qrBox.style.display = "none";
+  };
+
+  qrImage.onload = () => {
+    qrBox.style.display = "flex";
+  };
+
+  qrImage.src = config.qrImage + "?v=" + Date.now();
+}
 
     function showMessage(text, isError = false) {
       messageBox.textContent = text;
