@@ -1,0 +1,30 @@
+{
+  "title": "MOKSiAL - Ekrany",
+  "postersJson": "plakaty-moksial.json",
+  "qrImage": "qr-moksial.png",
+  "clockColor": "#ff5b67",
+  "tickerTextColor": "#ffffff",
+  "tickerSpeed": 55,
+  "tickerPauseMs": 5000,
+  "tickerItems": [
+    "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
+    "MOKSiAL, ul. Słowackiego 13 - godziny działania: poniedziałek-piątek 8:00-16:00",
+    "4Peron - godziny działania: według repertuaru i harmonogramu wydarzeń",
+    "Zapraszamy na koncerty, spektakle, kino, warsztaty i spotkania",
+    "Chcesz wiedzieć więcej? Wejdź na naszą stronę www.moksial.pl lub zeskanuj kod QR >>>"
+  ],
+  "topGradient": [
+    "rgba(26, 58, 110, 0.46)",
+    "rgba(62, 33, 108, 0.38)",
+    "rgba(129, 39, 92, 0.30)",
+    "rgba(35, 86, 124, 0.36)",
+    "rgba(18, 28, 52, 0.52)"
+  ],
+  "bottomGradient": [
+    "rgba(18, 36, 68, 0.54)",
+    "rgba(34, 36, 82, 0.46)",
+    "rgba(92, 28, 88, 0.38)",
+    "rgba(26, 74, 110, 0.40)",
+    "rgba(14, 24, 42, 0.58)"
+  ]
+}
