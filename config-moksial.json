@@ -4,7 +4,8 @@
   "qrImage": "qr-moksial.png",
   "clockColor": "#ff5b67",
   "tickerTextColor": "#ffffff",
-  "tickerSpeed": 75,
+  "topMessageColor": "rgba(255,255,255,0.96)",
+  "tickerSpeed": 55,
   "tickerPauseMs": 5000,
   "tickerItems": [
     "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
@@ -12,6 +13,28 @@
     "4Peron - godziny działania: według repertuaru i harmonogramu wydarzeń",
     "Zapraszamy na koncerty, spektakle, kino, warsztaty i spotkania",
     "Chcesz wiedzieć więcej? Wejdź na naszą stronę www.moksial.pl lub zeskanuj kod QR >>>"
+  ],
+  "topMessages": [
+    "Witamy w MOKSiAL",
+    "Miłego dnia",
+    "Dobrze, że tu jesteś",
+    "Zapraszamy na wydarzenia",
+    "Życzymy miłych wrażeń",
+    "Kultura jest blisko",
+    "Sprawdź, co dziś się dzieje",
+    "Miłego wieczoru",
+    "Dobrego dnia",
+    "Do zobaczenia na wydarzeniach",
+    "Miło Cię widzieć",
+    "Życzymy udanego dnia",
+    "Niech ten dzień będzie dobry",
+    "Zostań z kulturą na dłużej",
+    "Czas na dobre wydarzenia",
+    "Zapraszamy na 4Peron",
+    "Dziękujemy, że jesteś z nami",
+    "Niech kultura poprawi Ci dzień",
+    "Przed Tobą coś ciekawego",
+    "Warto tu być"
   ],
   "topGradient": [
     "rgba(26, 58, 110, 0.46)",
