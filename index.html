@@ -46,6 +46,7 @@
 
       --clock-color: #ff5b67;
       --ticker-text-color: #ffffff;
+      --top-message-color: rgba(255,255,255,0.96);
     }
 
     #app {
@@ -121,9 +122,11 @@
       right: var(--topBarSide);
       height: var(--topBarHeight);
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       align-items: center;
+      padding-left: 26px;
       padding-right: 22px;
+      gap: 20px;
       z-index: 50;
       overflow: hidden;
       border-radius: 20px;
@@ -166,6 +169,36 @@
       pointer-events: none;
     }
 
+    .top-message-wrap {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .top-message {
+      color: var(--top-message-color);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-shadow:
+        0 2px 10px rgba(0,0,0,0.28),
+        0 0 14px rgba(255,255,255,0.05);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 1;
+      transition: opacity 800ms ease-in-out;
+    }
+
+    .top-message.fade-out {
+      opacity: 0;
+    }
+
     .clock-box {
       position: relative;
       z-index: 2;
@@ -177,6 +210,7 @@
       background: transparent;
       border: none;
       box-shadow: none;
+      flex-shrink: 0;
     }
 
     .clock {
@@ -343,6 +377,10 @@
     }
 
     @media (orientation: portrait) {
+      .top-message {
+        font-size: 24px;
+      }
+
       .clock {
         font-size: 38px;
         letter-spacing: 3px;
@@ -378,6 +416,10 @@
     <img id="slideB" class="slide" alt="Plakat B">
 
     <div class="top-bar">
+      <div class="top-message-wrap">
+        <div id="topMessage" class="top-message">Miłego dnia</div>
+      </div>
+
       <div class="clock-box">
         <div id="clock" class="clock">00:00</div>
         <div id="date" class="date">--</div>
@@ -392,8 +434,8 @@
       </div>
 
       <div class="qr-box" id="qrBox">
-  <img id="qrImage" alt="Kod QR">
-</div>
+        <img id="qrImage" alt="Kod QR">
+      </div>
     </div>
 
     <div id="message" class="message">Ładowanie plakatów...</div>
@@ -403,6 +445,7 @@
     const slideDuration = 8000;
     const reloadInterval = 300000;
     const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
+    const topMessageIntervalMs = 60000;
 
     let config = null;
     let images = [];
@@ -411,6 +454,10 @@
     let activeBg = 0;
     let slideshowStarted = false;
     let currentTimer = null;
+
+    let topMessages = [];
+    let topMessageIndex = 0;
+    let topMessageTimer = null;
 
     const slideA = document.getElementById("slideA");
     const slideB = document.getElementById("slideB");
@@ -421,6 +468,8 @@
     const clockEl = document.getElementById("clock");
     const dateEl = document.getElementById("date");
     const qrImage = document.getElementById("qrImage");
+    const qrBox = document.getElementById("qrBox");
+    const topMessageEl = document.getElementById("topMessage");
 
     const tickerTrack = document.getElementById("tickerTrack");
     const tickerTextEl = document.getElementById("tickerText");
@@ -460,38 +509,65 @@
       applyConfig();
     }
 
-  function applyConfig() {
-  document.title = config.title || "Ekrany informacyjne";
+    function applyConfig() {
+      document.title = config.title || "Ekrany informacyjne";
 
-  const root = document.documentElement;
-  root.style.setProperty("--top-grad-1", config.topGradient[0]);
-  root.style.setProperty("--top-grad-2", config.topGradient[1]);
-  root.style.setProperty("--top-grad-3", config.topGradient[2]);
-  root.style.setProperty("--top-grad-4", config.topGradient[3]);
-  root.style.setProperty("--top-grad-5", config.topGradient[4]);
+      const root = document.documentElement;
+      root.style.setProperty("--top-grad-1", config.topGradient[0]);
+      root.style.setProperty("--top-grad-2", config.topGradient[1]);
+      root.style.setProperty("--top-grad-3", config.topGradient[2]);
+      root.style.setProperty("--top-grad-4", config.topGradient[3]);
+      root.style.setProperty("--top-grad-5", config.topGradient[4]);
 
-  root.style.setProperty("--bottom-grad-1", config.bottomGradient[0]);
-  root.style.setProperty("--bottom-grad-2", config.bottomGradient[1]);
-  root.style.setProperty("--bottom-grad-3", config.bottomGradient[2]);
-  root.style.setProperty("--bottom-grad-4", config.bottomGradient[3]);
-  root.style.setProperty("--bottom-grad-5", config.bottomGradient[4]);
+      root.style.setProperty("--bottom-grad-1", config.bottomGradient[0]);
+      root.style.setProperty("--bottom-grad-2", config.bottomGradient[1]);
+      root.style.setProperty("--bottom-grad-3", config.bottomGradient[2]);
+      root.style.setProperty("--bottom-grad-4", config.bottomGradient[3]);
+      root.style.setProperty("--bottom-grad-5", config.bottomGradient[4]);
 
-  root.style.setProperty("--clock-color", config.clockColor || "#ff5b67");
-  root.style.setProperty("--ticker-text-color", config.tickerTextColor || "#ffffff");
+      root.style.setProperty("--clock-color", config.clockColor || "#ff5b67");
+      root.style.setProperty("--ticker-text-color", config.tickerTextColor || "#ffffff");
+      root.style.setProperty("--top-message-color", config.topMessageColor || "rgba(255,255,255,0.96)");
 
-  const qrBox = document.getElementById("qrBox");
-  qrBox.style.display = "flex";
+      qrBox.style.display = "flex";
 
-  qrImage.onerror = () => {
-    qrBox.style.display = "none";
-  };
+      qrImage.onerror = () => {
+        qrBox.style.display = "none";
+      };
 
-  qrImage.onload = () => {
-    qrBox.style.display = "flex";
-  };
+      qrImage.onload = () => {
+        qrBox.style.display = "flex";
+      };
 
-  qrImage.src = config.qrImage + "?v=" + Date.now();
-}
+      qrImage.src = config.qrImage + "?v=" + Date.now();
+
+      topMessages = config.topMessages && config.topMessages.length
+        ? config.topMessages
+        : [
+            "Miłego dnia",
+            "Dobrze, że tu jesteś",
+            "Miłego pobytu",
+            "Dobrego dnia"
+          ];
+
+      topMessageIndex = 0;
+      topMessageEl.textContent = topMessages[0];
+      startTopMessages();
+    }
+
+    function startTopMessages() {
+      if (topMessageTimer) clearInterval(topMessageTimer);
+
+      topMessageTimer = setInterval(() => {
+        topMessageEl.classList.add("fade-out");
+
+        setTimeout(() => {
+          topMessageIndex = (topMessageIndex + 1) % topMessages.length;
+          topMessageEl.textContent = topMessages[topMessageIndex];
+          topMessageEl.classList.remove("fade-out");
+        }, 800);
+      }, topMessageIntervalMs);
+    }
 
     function showMessage(text, isError = false) {
       messageBox.textContent = text;
