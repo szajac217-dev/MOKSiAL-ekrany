@@ -169,32 +169,34 @@
       pointer-events: none;
     }
 
-    .top-message-wrap {
-      position: relative;
-      z-index: 2;
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      align-items: center;
-      height: 100%;
-      overflow: hidden;
-    }
+   .top-message-wrap {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* KLUCZOWE */
+  height: 100%;
+  overflow: hidden;
+  text-align: center;
+}
 
-    .top-message {
-      color: var(--top-message-color);
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-      text-shadow:
-        0 2px 10px rgba(0,0,0,0.28),
-        0 0 14px rgba(255,255,255,0.05);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      opacity: 1;
-      transition: opacity 800ms ease-in-out;
-    }
-
+   .top-message {
+  color: var(--top-message-color);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-shadow:
+    0 2px 10px rgba(0,0,0,0.28),
+    0 0 14px rgba(255,255,255,0.05);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 1;
+  transition: opacity 800ms ease-in-out;
+  text-align: center;
+  animation: fadePulse 6s ease-in-out infinite;
+}
     .top-message.fade-out {
       opacity: 0;
     }
@@ -403,6 +405,11 @@
         width: 150px;
         height: 150px;
       }
+      @keyframes fadePulse {
+  0% { opacity: 0.85; }
+  50% { opacity: 1; }
+  100% { opacity: 0.85; }
+}
     }
   </style>
 </head>
