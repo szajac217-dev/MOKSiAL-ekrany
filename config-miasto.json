@@ -2,7 +2,7 @@
   "title": "Szklarska Poręba - Ekrany Miasta",
   "postersJson": "plakaty-miasto.json",
   "qrImage": "qr-miasto.png",
-  "clockColor": "#ffd36a",
+  "clockColor": "#ffd84d",
   "tickerTextColor": "#ffffff",
   "tickerSpeed": 48,
   "tickerPauseMs": 5000,
@@ -13,17 +13,17 @@
     "Chcesz wiedzieć więcej? Wejdź na stronę miasta lub zeskanuj kod QR >>>"
   ],
   "topGradient": [
-    "rgba(46, 96, 42, 0.48)",
-    "rgba(84, 122, 42, 0.38)",
-    "rgba(180, 115, 22, 0.28)",
-    "rgba(88, 132, 48, 0.34)",
-    "rgba(34, 66, 24, 0.54)"
+    "rgba(38, 150, 52, 0.62)",
+    "rgba(86, 182, 54, 0.54)",
+    "rgba(255, 150, 28, 0.46)",
+    "rgba(255, 114, 24, 0.40)",
+    "rgba(24, 96, 34, 0.62)"
   ],
   "bottomGradient": [
-    "rgba(34, 72, 30, 0.56)",
-    "rgba(82, 114, 38, 0.44)",
-    "rgba(172, 108, 26, 0.34)",
-    "rgba(96, 142, 52, 0.36)",
-    "rgba(28, 52, 20, 0.58)"
+    "rgba(24, 126, 40, 0.66)",
+    "rgba(94, 170, 42, 0.54)",
+    "rgba(255, 160, 34, 0.46)",
+    "rgba(255, 122, 26, 0.42)",
+    "rgba(20, 88, 28, 0.64)"
   ]
 }
