@@ -1,4 +1,4 @@
-name: Generate plakaty.json
+name: Generate posters json files
 
 on:
   push:
@@ -17,30 +17,35 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Generate plakaty.json
+      - name: Generate JSON files
         shell: bash
         run: |
           python3 - <<'PY'
           import os
           import json
 
-          folder = "Plakaty"
+          folders = {
+              "Plakaty-MOKSiAL": "plakaty-moksial.json",
+              "Plakaty-Miasto": "plakaty-miasto.json"
+          }
+
           allowed = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
-          files = []
-          if os.path.isdir(folder):
-              for name in sorted(os.listdir(folder)):
-                  path = os.path.join(folder, name)
-                  ext = os.path.splitext(name)[1].lower()
-                  if os.path.isfile(path) and ext in allowed:
-                      files.append(f"{folder}/{name}")
+          for folder, output_file in folders.items():
+              files = []
+              if os.path.isdir(folder):
+                  for name in sorted(os.listdir(folder)):
+                      path = os.path.join(folder, name)
+                      ext = os.path.splitext(name)[1].lower()
+                      if os.path.isfile(path) and ext in allowed:
+                          files.append(f"{folder}/{name}")
 
-          with open("plakaty.json", "w", encoding="utf-8") as f:
-              json.dump(files, f, ensure_ascii=False, indent=2)
-              f.write("\n")
+              with open(output_file, "w", encoding="utf-8") as f:
+                  json.dump(files, f, ensure_ascii=False, indent=2)
+                  f.write("\n")
 
-          print("Wygenerowano plakaty.json:")
-          print(json.dumps(files, ensure_ascii=False, indent=2))
+              print(f"Wygenerowano {output_file}:")
+              print(json.dumps(files, ensure_ascii=False, indent=2))
           PY
 
       - name: Commit and push if changed
@@ -49,11 +54,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add plakaty.json
+          git add plakaty-moksial.json plakaty-miasto.json
 
           if git diff --cached --quiet; then
-            echo "Brak zmian w plakaty.json"
+            echo "Brak zmian"
           else
-            git commit -m "Automatyczna aktualizacja plakaty.json"
+            git commit -m "Automatyczna aktualizacja list plakatów"
             git push
           fi
