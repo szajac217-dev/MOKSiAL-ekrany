@@ -4,7 +4,7 @@
   "qrImage": "qr-moksial.png",
   "clockColor": "#ff5b67",
   "tickerTextColor": "#ffffff",
-  "tickerSpeed": 55,
+  "tickerSpeed": 75,
   "tickerPauseMs": 5000,
   "tickerItems": [
     "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
