@@ -463,7 +463,7 @@
     let currentTimer = null;
 
     let topMessages = [];
-    let topMessageIndex = 0;
+    let topMessageIndex = -1;
     let topMessageTimer = null;
 
     const slideA = document.getElementById("slideA");
@@ -557,24 +557,35 @@
             "Dobrego dnia"
           ];
 
-      topMessageIndex = 0;
-      topMessageEl.textContent = topMessages[0];
-      startTopMessages();
+     if (topMessages.length) {
+  const firstIndex = Math.floor(Math.random() * topMessages.length);
+  lastTopMessageIndex = firstIndex;
+  topMessageEl.textContent = topMessages[firstIndex];
+}
+
+startTopMessages();
     }
+function startTopMessages() {
+  if (topMessageTimer) clearInterval(topMessageTimer);
 
-    function startTopMessages() {
-      if (topMessageTimer) clearInterval(topMessageTimer);
+  topMessageTimer = setInterval(() => {
+    topMessageEl.classList.add("fade-out");
 
-      topMessageTimer = setInterval(() => {
-        topMessageEl.classList.add("fade-out");
+    setTimeout(() => {
+      if (!topMessages.length) return;
 
-        setTimeout(() => {
-          topMessageIndex = (topMessageIndex + 1) % topMessages.length;
-          topMessageEl.textContent = topMessages[topMessageIndex];
-          topMessageEl.classList.remove("fade-out");
-        }, 800);
-      }, topMessageIntervalMs);
-    }
+      let newIndex;
+
+      do {
+        newIndex = Math.floor(Math.random() * topMessages.length);
+      } while (newIndex === lastTopMessageIndex && topMessages.length > 1);
+
+      lastTopMessageIndex = newIndex;
+      topMessageEl.textContent = topMessages[newIndex];
+      topMessageEl.classList.remove("fade-out");
+    }, 800);
+  }, topMessageIntervalMs);
+}
 
     function showMessage(text, isError = false) {
       messageBox.textContent = text;
