@@ -5,7 +5,7 @@
   "clockColor": "#ff5b67",
   "tickerTextColor": "#ffffff",
   "topMessageColor": "rgba(255,255,255,0.96)",
-  "tickerSpeed": 55,
+  "tickerSpeed": 75,
   "tickerPauseMs": 5000,
   "tickerItems": [
     "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
