@@ -7,13 +7,14 @@
   "topMessageColor": "rgba(255,255,255,0.96)",
   "tickerSpeed": 75,
   "tickerPauseMs": 5000,
-  "tickerItems": [
-    "Zapraszamy na wydarzenia MOKSiAL w Szklarskiej Porębie",
-    "MOKSiAL, ul. Słowackiego 13 - godziny działania: poniedziałek-piątek 8:00-16:00",
-    "4Peron - godziny działania: według repertuaru i harmonogramu wydarzeń",
-    "Zapraszamy na koncerty, spektakle, kino, warsztaty i spotkania",
-    "Chcesz wiedzieć więcej? Wejdź na naszą stronę www.moksial.pl lub zeskanuj kod QR >>>"
-  ],
+  "tickerItems": 
+ [
+  "Dzieje się w MOKSiAL",
+  "Zapraszamy na kino, koncerty, spektakle i warsztaty",
+  "Sprawdź repertuar 4Peronu i aktualne wydarzenia",
+  "Więcej informacji na www.moksial.pl",
+  "Zeskanuj kod QR i bądź na bieżąco >>>"
+],
   "topMessages": [
     "Witamy w MOKSiAL",
     "Miłego dnia",
