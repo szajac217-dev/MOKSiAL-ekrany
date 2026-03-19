@@ -848,23 +848,28 @@
       return activeBg === 0 ? bgSlideB : bgSlideA;
     }
 
-    function resetSlideState(slide) {
-      slide.classList.remove("visible");
-      slide.style.transition = "none";
-      slide.style.opacity = "0";
-      slide.style.transform = "translateX(0) translateY(0) scale(1) rotate(0deg)";
+function resetSlideState(slide) {
+  slide.classList.remove("visible");
+  slide.style.transition = "none";
+  slide.style.opacity = "0";
+  slide.style.transform = "translateX(0) translateY(0) scale(1) rotate(0deg)";
+}
+    function clearSlideMedia(slide) {
+  const { image, video } = getMediaEls(slide);
 
-      const { image, video } = getMediaEls(slide);
-      slide.classList.remove("video-mode");
-      image.src = "";
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-      video.onended = null;
-      video.onerror = null;
-      image.onload = null;
-      image.onerror = null;
-    }
+  slide.classList.remove("video-mode");
+
+  image.onload = null;
+  image.onerror = null;
+  image.src = "";
+
+  video.onloadeddata = null;
+  video.onended = null;
+  video.onerror = null;
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
+}
 
     function stopSlideTimer() {
       if (slideTimerInterval) {
@@ -1011,11 +1016,13 @@
       video.load();
     }
 
-    function showNextSlide() {
-      if (!images.length) return;
+   function showNextSlide() {
+  if (!images.length) return;
 
-      const current = getActiveSlide();
-      const next = getInactiveSlide();
+  const current = getActiveSlide();
+  const next = getInactiveSlide();
+
+  clearSlideMedia(next);
       const transition = getRandomTransition();
       const nextSrc = images[currentIndex];
       const nextDuration = getSlideDurationForSrc(nextSrc);
@@ -1097,12 +1104,13 @@
       }
     }
 
-    function startSlideshow() {
-      const first = getActiveSlide();
-      const firstBg = getActiveBg();
-      const firstSrc = images[currentIndex];
-      const firstDuration = getSlideDurationForSrc(firstSrc);
+   function startSlideshow() {
+  const first = getActiveSlide();
+  const firstBg = getActiveBg();
+  const firstSrc = images[currentIndex];
+  const firstDuration = getSlideDurationForSrc(firstSrc);
 
+  clearSlideMedia(first);
       firstBg.src = firstSrc;
       firstBg.onload = () => {
         firstBg.classList.add("bg-visible");
