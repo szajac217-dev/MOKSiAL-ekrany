@@ -1,68 +1,1037 @@
-<!-- SKRÓCIŁEM OPIS – TO JEST TEN SAM KOD KTÓRY PAN MIAŁ,
-TYLKO BEZ ELEMENTÓW VIDEO I BEZ BŁĘDÓW -->
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ekrany informacyjne</title>
 
-<script>
-const normalSlideDuration = 8000;
-const longSlideDuration = 30000;
-const reloadInterval = 900000;
-const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
-const topMessageIntervalMs = 60000;
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-function resetSlideState(slide) {
-  slide.classList.remove("visible");
-  slide.style.transition = "none";
-  slide.style.opacity = "0";
-  slide.style.transform = "translateX(0) translateY(0) scale(1) rotate(0deg)";
-}
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #06080d;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-function isLongSlide(src) {
-  const fileName = (src || "").split('/').pop().toLowerCase();
-  return fileName.includes("dluzej");
-}
+    :root {
+      --topBarTop: 12px;
+      --topBarSide: 12px;
+      --topBarHeight: 82px;
 
-function getSlideDurationForSrc(src) {
-  return isLongSlide(src) ? longSlideDuration : normalSlideDuration;
-}
+      --tickerHeight: 190px;
+      --tickerQrSpace: 210px;
+      --bottomBarSide: 12px;
+      --bottomBarBottom: 12px;
 
-function startSlideTimer(durationMs, src) {
-  if (!isLongSlide(src)) return;
+      --slideTop: calc(var(--topBarTop) + var(--topBarHeight) + 10px);
+      --slideBottom: calc(var(--tickerHeight) + var(--bottomBarBottom) + 6px);
 
-  slideCountdown = Math.ceil(durationMs / 1000);
-  slideTimerEl.textContent = `${slideCountdown} s`;
-  slideTimerEl.classList.remove("hidden");
+      --top-grad-1: rgba(26, 58, 110, 0.46);
+      --top-grad-2: rgba(62, 33, 108, 0.38);
+      --top-grad-3: rgba(129, 39, 92, 0.30);
+      --top-grad-4: rgba(35, 86, 124, 0.36);
+      --top-grad-5: rgba(18, 28, 52, 0.52);
 
-  slideTimerInterval = setInterval(() => {
-    slideCountdown -= 1;
-    if (slideCountdown <= 0) return;
-    slideTimerEl.textContent = `${slideCountdown} s`;
-  }, 1000);
-}
+      --bottom-grad-1: rgba(18, 36, 68, 0.54);
+      --bottom-grad-2: rgba(34, 36, 82, 0.46);
+      --bottom-grad-3: rgba(92, 28, 88, 0.38);
+      --bottom-grad-4: rgba(26, 74, 110, 0.40);
+      --bottom-grad-5: rgba(14, 24, 42, 0.58);
 
-function showNextSlide() {
-  if (!images.length) return;
+      --clock-color: #ff5b67;
+      --ticker-text-color: #ffffff;
+      --top-message-color: rgba(255,255,255,0.96);
+    }
 
-  const current = getActiveSlide();
-  const next = getInactiveSlide();
-  const transition = getRandomTransition();
-  const nextSrc = images[currentIndex];
-  const nextDuration = getSlideDurationForSrc(nextSrc);
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(120,180,255,0.10), transparent 30%),
+        radial-gradient(circle at 80% 75%, rgba(255,120,200,0.08), transparent 28%),
+        linear-gradient(135deg, #0b1020 0%, #121a2d 50%, #0c1220 100%);
+    }
 
-  next.onload = () => {
-    switchBackground(nextSrc);
-    applyTransition(next, current, transition, nextDuration);
-    startSlideTimer(nextDuration, nextSrc);
+    .bg-slide {
+      position: absolute;
+      inset: -5%;
+      width: 110%;
+      height: 110%;
+      object-fit: cover;
+      filter: blur(70px) brightness(0.42) saturate(1.15);
+      transform: scale(1.08);
+      opacity: 0;
+      transition: opacity 1400ms ease-in-out;
+      z-index: 1;
+      pointer-events: none;
+    }
 
-    activeSlide = activeSlide === 0 ? 1 : 0;
-    currentIndex = (currentIndex + 1) % images.length;
+    .bg-visible {
+      opacity: 1;
+    }
 
-    scheduleNextSlide(nextDuration);
-  };
+    .backdrop-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(0,0,0,0.24) 0%,
+          rgba(0,0,0,0.08) 22%,
+          rgba(0,0,0,0.00) 45%,
+          rgba(0,0,0,0.00) 60%,
+          rgba(0,0,0,0.12) 82%,
+          rgba(0,0,0,0.22) 100%
+        );
+      z-index: 2;
+      pointer-events: none;
+    }
 
-  next.onerror = () => {
-    currentIndex = (currentIndex + 1) % images.length;
-    scheduleNextSlide(normalSlideDuration);
-  };
+    .slide {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: var(--slideTop);
+      bottom: var(--slideBottom);
+      width: 100%;
+      height: calc(100vh - var(--slideTop) - var(--slideBottom));
+      object-fit: contain;
+      object-position: center center;
+      opacity: 0;
+      transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+      will-change: opacity, transform;
+      z-index: 5;
+      pointer-events: none;
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.35));
+    }
 
-  next.src = nextSrc;
-}
-</script>
+    .visible {
+      opacity: 1;
+    }
+
+    .top-bar {
+      position: absolute;
+      top: var(--topBarTop);
+      left: var(--topBarSide);
+      right: var(--topBarSide);
+      height: var(--topBarHeight);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-left: 26px;
+      padding-right: 22px;
+      gap: 20px;
+      z-index: 50;
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background:
+        radial-gradient(circle at 14% 28%, rgba(120, 190, 255, 0.16) 0 18px, transparent 19px),
+        radial-gradient(circle at 20% 62%, rgba(255, 255, 255, 0.08) 0 10px, transparent 11px),
+        radial-gradient(circle at 36% 36%, rgba(255, 255, 255, 0.05) 0 13px, transparent 14px),
+        radial-gradient(circle at 48% 70%, rgba(255, 255, 255, 0.06) 0 9px, transparent 10px),
+        radial-gradient(circle at 62% 24%, rgba(255, 255, 255, 0.05) 0 11px, transparent 12px),
+        radial-gradient(circle at 78% 58%, rgba(255, 255, 255, 0.07) 0 14px, transparent 15px),
+        linear-gradient(
+          110deg,
+          var(--top-grad-1) 0%,
+          var(--top-grad-2) 24%,
+          var(--top-grad-3) 46%,
+          var(--top-grad-4) 72%,
+          var(--top-grad-5) 100%
+        );
+      backdrop-filter: blur(18px) saturate(150%);
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
+      box-shadow:
+        0 10px 34px rgba(0,0,0,0.28),
+        inset 0 1px 0 rgba(255,255,255,0.14),
+        inset 0 -10px 18px rgba(0,0,0,0.08);
+    }
+
+    .top-bar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255,255,255,0.16) 0%,
+          rgba(255,255,255,0.06) 24%,
+          rgba(255,255,255,0.00) 58%
+        );
+      pointer-events: none;
+    }
+
+    .top-message-wrap {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .top-message {
+      color: var(--top-message-color);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-shadow:
+        0 2px 10px rgba(0,0,0,0.28),
+        0 0 14px rgba(255,255,255,0.05);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 1;
+      text-align: center;
+      transform: translateY(0);
+      filter: blur(0px);
+    }
+
+    .top-message.effect-fade-out {
+      opacity: 0;
+      transition: opacity 700ms ease-in-out;
+    }
+
+    .top-message.effect-fade-in {
+      opacity: 1;
+      transition: opacity 700ms ease-in-out;
+    }
+
+    .top-message.effect-blur-out {
+      opacity: 0;
+      filter: blur(8px);
+      transition: opacity 700ms ease-in-out, filter 700ms ease-in-out;
+    }
+
+    .top-message.effect-blur-in {
+      opacity: 1;
+      filter: blur(0px);
+      transition: opacity 700ms ease-in-out, filter 700ms ease-in-out;
+    }
+
+    .top-message.effect-up-out {
+      opacity: 0;
+      transform: translateY(-14px);
+      transition: opacity 700ms ease-in-out, transform 700ms ease-in-out;
+    }
+
+    .top-message.effect-up-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 700ms ease-in-out, transform 700ms ease-in-out;
+    }
+
+    .top-message.effect-down-out {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 700ms ease-in-out, transform 700ms ease-in-out;
+    }
+
+    .top-message.effect-down-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 700ms ease-in-out, transform 700ms ease-in-out;
+    }
+
+    .clock-box {
+      position: relative;
+      z-index: 2;
+      min-width: 180px;
+      padding: 2px 2px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      flex-shrink: 0;
+    }
+
+    .clock {
+      color: var(--clock-color);
+      font-size: 46px;
+      line-height: 1;
+      letter-spacing: 4px;
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      text-shadow:
+        0 0 4px rgba(255,255,255,0.12),
+        0 0 12px rgba(255,255,255,0.08),
+        0 0 24px rgba(255,255,255,0.04);
+    }
+
+    .date {
+      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.94);
+      font-size: 14px;
+      text-align: right;
+      letter-spacing: 0.4px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.24);
+    }
+
+    .ticker-bar {
+      position: absolute;
+      left: var(--bottomBarSide);
+      right: var(--bottomBarSide);
+      bottom: var(--bottomBarBottom);
+      height: var(--tickerHeight);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      padding-right: var(--tickerQrSpace);
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background:
+        radial-gradient(circle at 10% 60%, rgba(115, 190, 255, 0.12) 0 18px, transparent 19px),
+        radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.06) 0 10px, transparent 11px),
+        radial-gradient(circle at 42% 74%, rgba(255, 255, 255, 0.05) 0 14px, transparent 15px),
+        radial-gradient(circle at 58% 32%, rgba(255,255,255,0.05) 0 8px, transparent 9px),
+        radial-gradient(circle at 72% 66%, rgba(255,255,255,0.04) 0 11px, transparent 12px),
+        radial-gradient(circle at 86% 30%, rgba(255,255,255,0.05) 0 13px, transparent 14px),
+        linear-gradient(
+          100deg,
+          var(--bottom-grad-1) 0%,
+          var(--bottom-grad-2) 24%,
+          var(--bottom-grad-3) 52%,
+          var(--bottom-grad-4) 76%,
+          var(--bottom-grad-5) 100%
+        );
+      backdrop-filter: blur(18px) saturate(145%);
+      -webkit-backdrop-filter: blur(18px) saturate(145%);
+      box-shadow:
+        0 12px 34px rgba(0,0,0,0.28),
+        inset 0 1px 0 rgba(255,255,255,0.12),
+        inset 0 -10px 18px rgba(0,0,0,0.10);
+    }
+
+    .ticker-bar::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 2px;
+      background:
+        linear-gradient(
+          90deg,
+          rgba(255,255,255,0.00) 0%,
+          rgba(255,255,255,0.30) 25%,
+          rgba(255,255,255,0.18) 50%,
+          rgba(255,255,255,0.20) 75%,
+          rgba(255,255,255,0.00) 100%
+        );
+      pointer-events: none;
+    }
+
+    .ticker-wrap {
+      position: absolute;
+      left: 22px;
+      right: var(--tickerQrSpace);
+      overflow: hidden;
+      white-space: nowrap;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    .ticker-track {
+      display: inline-block;
+      white-space: nowrap;
+      will-change: transform;
+      transform: translateX(0);
+    }
+
+    .ticker-text {
+      display: inline-block;
+      color: var(--ticker-text-color);
+      font-size: 44px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-shadow:
+        0 2px 10px rgba(0,0,0,0.42),
+        0 0 16px rgba(0,0,0,0.20);
+      white-space: nowrap;
+    }
+
+    .qr-box {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      width: 170px;
+      height: 170px;
+      border-radius: 20px;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255,255,255,0.97) 0%,
+          rgba(248,248,248,0.94) 100%
+        );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow:
+        0 12px 34px rgba(0,0,0,0.30),
+        inset 0 1px 0 rgba(255,255,255,0.75);
+      animation: qrPulse 4s ease-in-out infinite;
+      border: 1px solid rgba(255,255,255,0.22);
+      z-index: 2;
+    }
+
+    .qr-box img {
+      width: 150px;
+      height: 150px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .slide-timer {
+      position: absolute;
+      left: 22px;
+      bottom: 22px;
+      z-index: 70;
+      min-width: 84px;
+      padding: 10px 16px;
+      border-radius: 16px;
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.5px;
+      background: rgba(0, 0, 0, 0.34);
+      border: 1px solid rgba(255,255,255,0.14);
+      backdrop-filter: blur(12px) saturate(140%);
+      -webkit-backdrop-filter: blur(12px) saturate(140%);
+      box-shadow:
+        0 10px 28px rgba(0,0,0,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.10);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .slide-timer.hidden {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+
+    .message {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      color: white;
+      font-size: 24px;
+      z-index: 80;
+      background: rgba(0,0,0,0.75);
+    }
+
+    .error {
+      color: #ffb0b0;
+    }
+
+    @keyframes qrPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @media (orientation: portrait) {
+      .top-message {
+        font-size: 24px;
+      }
+
+      .clock {
+        font-size: 38px;
+        letter-spacing: 3px;
+      }
+
+      .date {
+        font-size: 12px;
+      }
+
+      .ticker-text {
+        font-size: 42px;
+      }
+
+      .qr-box {
+        width: 170px;
+        height: 170px;
+      }
+
+      .qr-box img {
+        width: 150px;
+        height: 150px;
+      }
+
+      .slide-timer {
+        font-size: 24px;
+        padding: 9px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <img id="bgSlideA" class="bg-slide bg-visible" alt="">
+    <img id="bgSlideB" class="bg-slide" alt="">
+    <div class="backdrop-overlay"></div>
+
+    <img id="slideA" class="slide visible" alt="Plakat A">
+    <img id="slideB" class="slide" alt="Plakat B">
+
+    <div class="top-bar">
+      <div class="top-message-wrap">
+        <div id="topMessage" class="top-message">Miłego dnia</div>
+      </div>
+
+      <div class="clock-box">
+        <div id="clock" class="clock">00:00</div>
+        <div id="date" class="date">--</div>
+      </div>
+    </div>
+
+    <div class="ticker-bar">
+      <div class="ticker-wrap">
+        <div class="ticker-track" id="tickerTrack">
+          <span class="ticker-text" id="tickerText"></span>
+        </div>
+      </div>
+
+      <div class="qr-box" id="qrBox">
+        <img id="qrImage" alt="Kod QR">
+      </div>
+    </div>
+
+    <div id="slideTimer" class="slide-timer hidden">30 s</div>
+
+    <div id="message" class="message">Ładowanie plakatów...</div>
+  </div>
+
+  <script>
+    const normalSlideDuration = 8000;
+    const longSlideDuration = 30000;
+    const reloadInterval = 300000;
+    const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
+    const topMessageIntervalMs = 60000;
+
+    let config = null;
+    let images = [];
+    let currentIndex = 0;
+    let activeSlide = 0;
+    let activeBg = 0;
+    let slideshowStarted = false;
+    let currentTimer = null;
+
+    let topMessages = [];
+    let lastTopMessageIndex = -1;
+    let topMessageTimer = null;
+
+    let slideTimerInterval = null;
+    let slideCountdown = 0;
+
+    const slideA = document.getElementById("slideA");
+    const slideB = document.getElementById("slideB");
+    const bgSlideA = document.getElementById("bgSlideA");
+    const bgSlideB = document.getElementById("bgSlideB");
+
+    const messageBox = document.getElementById("message");
+    const clockEl = document.getElementById("clock");
+    const dateEl = document.getElementById("date");
+    const qrImage = document.getElementById("qrImage");
+    const qrBox = document.getElementById("qrBox");
+    const topMessageEl = document.getElementById("topMessage");
+    const slideTimerEl = document.getElementById("slideTimer");
+
+    const tickerTrack = document.getElementById("tickerTrack");
+    const tickerTextEl = document.getElementById("tickerText");
+    const tickerWrap = document.querySelector(".ticker-wrap");
+
+    let tickerAnimationFrame = null;
+    let tickerPauseTimeout = null;
+    let tickerX = 0;
+    let lastTickerTs = 0;
+    let tickerTextWidth = 0;
+    let tickerWrapWidth = 0;
+    let tickerRunning = false;
+    let tickerStopX = 0;
+
+    const slideTransitions = [
+      { name: "fade", inDuration: 1800, outDuration: 1400 },
+      { name: "zoom", inDuration: 2200, outDuration: 1600 },
+      { name: "slide-left", inDuration: 1600, outDuration: 1200 },
+      { name: "slide-right", inDuration: 1600, outDuration: 1200 },
+      { name: "slide-up", inDuration: 1600, outDuration: 1200 },
+      { name: "soft-rotate", inDuration: 1800, outDuration: 1400 }
+    ];
+
+    const topMessageEffects = [
+      { outClass: "effect-fade-out", inClass: "effect-fade-in" },
+      { outClass: "effect-blur-out", inClass: "effect-blur-in" },
+      { outClass: "effect-up-out", inClass: "effect-up-in" },
+      { outClass: "effect-down-out", inClass: "effect-down-in" }
+    ];
+
+    function getMode() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("ekran") || "moksial";
+    }
+
+    async function loadConfig() {
+      const mode = getMode();
+      const configFile = mode === "miasto" ? "config-miasto.json" : "config-moksial.json";
+
+      const response = await fetch(configFile, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Nie udało się wczytać ${configFile}`);
+
+      config = await response.json();
+      applyConfig();
+    }
+
+    function clearTopMessageEffects() {
+      topMessageEl.classList.remove(
+        "effect-fade-out", "effect-fade-in",
+        "effect-blur-out", "effect-blur-in",
+        "effect-up-out", "effect-up-in",
+        "effect-down-out", "effect-down-in"
+      );
+    }
+
+    function getRandomTopMessage() {
+      if (!topMessages.length) return "";
+
+      let newIndex;
+      do {
+        newIndex = Math.floor(Math.random() * topMessages.length);
+      } while (newIndex === lastTopMessageIndex && topMessages.length > 1);
+
+      lastTopMessageIndex = newIndex;
+      return topMessages[newIndex];
+    }
+
+    function getRandomTopMessageEffect() {
+      return topMessageEffects[Math.floor(Math.random() * topMessageEffects.length)];
+    }
+
+    function applyConfig() {
+      document.title = config.title || "Ekrany informacyjne";
+
+      const root = document.documentElement;
+      root.style.setProperty("--top-grad-1", config.topGradient[0]);
+      root.style.setProperty("--top-grad-2", config.topGradient[1]);
+      root.style.setProperty("--top-grad-3", config.topGradient[2]);
+      root.style.setProperty("--top-grad-4", config.topGradient[3]);
+      root.style.setProperty("--top-grad-5", config.topGradient[4]);
+
+      root.style.setProperty("--bottom-grad-1", config.bottomGradient[0]);
+      root.style.setProperty("--bottom-grad-2", config.bottomGradient[1]);
+      root.style.setProperty("--bottom-grad-3", config.bottomGradient[2]);
+      root.style.setProperty("--bottom-grad-4", config.bottomGradient[3]);
+      root.style.setProperty("--bottom-grad-5", config.bottomGradient[4]);
+
+      root.style.setProperty("--clock-color", config.clockColor || "#ff5b67");
+      root.style.setProperty("--ticker-text-color", config.tickerTextColor || "#ffffff");
+      root.style.setProperty("--top-message-color", config.topMessageColor || "rgba(255,255,255,0.96)");
+
+      qrBox.style.display = "flex";
+
+      qrImage.onerror = () => {
+        qrBox.style.display = "none";
+      };
+
+      qrImage.onload = () => {
+        qrBox.style.display = "flex";
+      };
+
+      qrImage.src = config.qrImage + "?v=" + Date.now();
+
+      topMessages = config.topMessages && config.topMessages.length
+        ? config.topMessages
+        : ["Miłego dnia", "Dobrze, że tu jesteś", "Dobrego dnia"];
+
+      const firstMessage = getRandomTopMessage();
+      topMessageEl.textContent = firstMessage;
+
+      startTopMessages();
+    }
+
+    function startTopMessages() {
+      if (topMessageTimer) clearInterval(topMessageTimer);
+
+      topMessageTimer = setInterval(() => {
+        if (!topMessages.length) return;
+
+        const effect = getRandomTopMessageEffect();
+        clearTopMessageEffects();
+        topMessageEl.classList.add(effect.outClass);
+
+        setTimeout(() => {
+          topMessageEl.textContent = getRandomTopMessage();
+          clearTopMessageEffects();
+          topMessageEl.classList.add(effect.inClass);
+        }, 700);
+
+        setTimeout(() => {
+          clearTopMessageEffects();
+        }, 1450);
+      }, topMessageIntervalMs);
+    }
+
+    function showMessage(text, isError = false) {
+      messageBox.textContent = text;
+      messageBox.className = isError ? "message error" : "message";
+      messageBox.style.display = "flex";
+    }
+
+    function hideMessage() {
+      messageBox.style.display = "none";
+    }
+
+    function updateClock() {
+      const now = new Date();
+
+      const time = now.toLocaleTimeString("pl-PL", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      const date = now.toLocaleDateString("pl-PL", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
+
+      clockEl.textContent = time;
+      dateEl.textContent = date;
+    }
+
+    function buildTickerText() {
+      const separator = "   ✦   ";
+      tickerTextEl.textContent = config.tickerItems.join(separator);
+    }
+
+    function setupTickerMeasurements() {
+      tickerTrack.style.transform = "translateX(0px)";
+      tickerTextWidth = tickerTextEl.offsetWidth;
+      tickerWrapWidth = tickerWrap.offsetWidth;
+      tickerX = tickerWrapWidth;
+      tickerStopX = tickerWrapWidth - tickerTextWidth;
+      tickerTrack.style.transform = `translateX(${tickerX}px)`;
+    }
+
+    function pauseTickerAndRestart() {
+      tickerRunning = false;
+      tickerTrack.style.transform = `translateX(${tickerStopX}px)`;
+
+      tickerPauseTimeout = setTimeout(() => {
+        tickerX = tickerWrapWidth;
+        tickerTrack.style.transform = `translateX(${tickerX}px)`;
+        lastTickerTs = 0;
+        tickerRunning = true;
+        tickerAnimationFrame = requestAnimationFrame(tickerStep);
+      }, config.tickerPauseMs || 5000);
+    }
+
+    function tickerStep(timestamp) {
+      if (!tickerRunning) return;
+
+      if (!lastTickerTs) lastTickerTs = timestamp;
+      const delta = (timestamp - lastTickerTs) / 1000;
+      lastTickerTs = timestamp;
+
+      tickerX -= (config.tickerSpeed || 55) * delta;
+
+      if (tickerX <= tickerStopX) {
+        pauseTickerAndRestart();
+        return;
+      }
+
+      tickerTrack.style.transform = `translateX(${tickerX}px)`;
+      tickerAnimationFrame = requestAnimationFrame(tickerStep);
+    }
+
+    function startTicker() {
+      if (tickerAnimationFrame) cancelAnimationFrame(tickerAnimationFrame);
+      if (tickerPauseTimeout) clearTimeout(tickerPauseTimeout);
+
+      buildTickerText();
+      setupTickerMeasurements();
+
+      tickerRunning = true;
+      lastTickerTs = 0;
+      tickerAnimationFrame = requestAnimationFrame(tickerStep);
+    }
+
+    function getActiveSlide() {
+      return activeSlide === 0 ? slideA : slideB;
+    }
+
+    function getInactiveSlide() {
+      return activeSlide === 0 ? slideB : slideA;
+    }
+
+    function getActiveBg() {
+      return activeBg === 0 ? bgSlideA : bgSlideB;
+    }
+
+    function getInactiveBg() {
+      return activeBg === 0 ? bgSlideB : bgSlideA;
+    }
+
+    function resetSlideState(slide) {
+      slide.classList.remove("visible");
+      slide.style.transition = "none";
+      slide.style.opacity = "0";
+      slide.style.transform = "translateX(0) translateY(0) scale(1) rotate(0deg)";
+    }
+
+    function isLongSlide(src) {
+      const fileName = (src || "").split('/').pop().toLowerCase();
+      return fileName.includes("dluzej");
+    }
+
+    function getSlideDurationForSrc(src) {
+      return isLongSlide(src) ? longSlideDuration : normalSlideDuration;
+    }
+
+    function stopSlideTimer() {
+      if (slideTimerInterval) {
+        clearInterval(slideTimerInterval);
+        slideTimerInterval = null;
+      }
+      slideTimerEl.classList.add("hidden");
+    }
+
+    function startSlideTimer(durationMs, src) {
+      stopSlideTimer();
+
+      if (!isLongSlide(src)) {
+        return;
+      }
+
+      slideCountdown = Math.ceil(durationMs / 1000);
+      slideTimerEl.textContent = `${slideCountdown} s`;
+      slideTimerEl.classList.remove("hidden");
+
+      slideTimerInterval = setInterval(() => {
+        slideCountdown -= 1;
+
+        if (slideCountdown <= 0) {
+          stopSlideTimer();
+          return;
+        }
+
+        slideTimerEl.textContent = `${slideCountdown} s`;
+      }, 1000);
+    }
+
+    function switchBackground(src) {
+      const currentBg = getActiveBg();
+      const nextBg = getInactiveBg();
+
+      nextBg.src = src;
+      nextBg.onload = () => {
+        nextBg.classList.add("bg-visible");
+        currentBg.classList.remove("bg-visible");
+        activeBg = activeBg === 0 ? 1 : 0;
+      };
+    }
+
+    function applyTransition(slideIn, slideOut, transition, transitionDurationMs) {
+      resetSlideState(slideIn);
+
+      if (transition.name === "fade") {
+        slideIn.style.transform = "scale(1)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideOut.style.opacity = "0";
+      }
+
+      if (transition.name === "zoom") {
+        slideIn.style.transform = "scale(1.06)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out, transform ${transitionDurationMs}ms linear`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "scale(1)";
+        slideOut.style.opacity = "0";
+      }
+
+      if (transition.name === "slide-left") {
+        slideIn.style.transform = "translateX(6%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateX(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateX(-3%)";
+      }
+
+      if (transition.name === "slide-right") {
+        slideIn.style.transform = "translateX(-6%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateX(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateX(3%)";
+      }
+
+      if (transition.name === "slide-up") {
+        slideIn.style.transform = "translateY(5%)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease, transform ${transition.inDuration}ms ease`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease, transform ${transition.outDuration}ms ease`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "translateY(0)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "translateY(-2%)";
+      }
+
+      if (transition.name === "soft-rotate") {
+        slideIn.style.transform = "scale(1.02) rotate(-1deg)";
+        slideIn.offsetHeight;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out, transform ${transition.inDuration}ms ease-in-out`;
+        slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out, transform ${transition.outDuration}ms ease-in-out`;
+        slideIn.style.opacity = "1";
+        slideIn.style.transform = "scale(1) rotate(0deg)";
+        slideOut.style.opacity = "0";
+        slideOut.style.transform = "scale(1.01) rotate(0.5deg)";
+      }
+
+      slideIn.classList.add("visible");
+      slideOut.classList.remove("visible");
+    }
+
+    function getRandomTransition() {
+      return slideTransitions[Math.floor(Math.random() * slideTransitions.length)];
+    }
+
+    function scheduleNextSlide(durationMs) {
+      if (currentTimer) clearTimeout(currentTimer);
+      currentTimer = setTimeout(showNextSlide, durationMs);
+    }
+
+    function showNextSlide() {
+      if (!images.length) return;
+
+      const current = getActiveSlide();
+      const next = getInactiveSlide();
+      const transition = getRandomTransition();
+      const nextSrc = images[currentIndex];
+      const nextDuration = getSlideDurationForSrc(nextSrc);
+
+      next.onload = () => {
+        switchBackground(nextSrc);
+        applyTransition(next, current, transition, nextDuration);
+        startSlideTimer(nextDuration, nextSrc);
+        activeSlide = activeSlide === 0 ? 1 : 0;
+        currentIndex = (currentIndex + 1) % images.length;
+        scheduleNextSlide(nextDuration);
+      };
+
+      next.onerror = () => {
+        currentIndex = (currentIndex + 1) % images.length;
+        scheduleNextSlide(normalSlideDuration);
+      };
+
+      next.src = nextSrc;
+    }
+
+    async function loadImages() {
+      try {
+        const response = await fetch(config.postersJson, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error("Plik JSON nie zawiera listy");
+
+        images = data.filter(file => validExtensions.test(file));
+
+        if (images.length === 0) {
+          throw new Error("Brak plakatów w pliku JSON");
+        }
+
+        hideMessage();
+
+        if (!slideshowStarted) {
+          startSlideshow();
+          slideshowStarted = true;
+        }
+      } catch (error) {
+        console.error(error);
+        showMessage(`Nie udało się wczytać pliku ${config.postersJson}.`, true);
+      }
+    }
+
+    function startSlideshow() {
+      const first = getActiveSlide();
+      const firstBg = getActiveBg();
+      const firstSrc = images[currentIndex];
+      const firstDuration = getSlideDurationForSrc(firstSrc);
+
+      firstBg.src = firstSrc;
+      firstBg.onload = () => {
+        firstBg.classList.add("bg-visible");
+      };
+
+      first.onload = () => {
+        first.style.transition = "opacity 1200ms ease-in-out";
+        first.style.opacity = "1";
+        first.classList.add("visible");
+        startSlideTimer(firstDuration, firstSrc);
+        currentIndex = (currentIndex + 1) % images.length;
+        scheduleNextSlide(firstDuration);
+      };
+
+      first.onerror = () => {
+        showMessage("Nie udało się załadować pierwszego plakatu.", true);
+      };
+
+      first.src = firstSrc;
+    }
+
+    async function init() {
+      try {
+        await loadConfig();
+        updateClock();
+        setInterval(updateClock, 1000);
+        await loadImages();
+        startTicker();
+        window.addEventListener("resize", startTicker);
+        setInterval(() => location.reload(), reloadInterval);
+      } catch (error) {
+        console.error(error);
+        showMessage("Nie udało się uruchomić ekranu.", true);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
