@@ -93,7 +93,7 @@
       pointer-events: none;
     }
 
-    .slide {
+    .slide-media {
       position: absolute;
       left: 0;
       right: 0;
@@ -101,18 +101,39 @@
       bottom: var(--slideBottom);
       width: 100%;
       height: calc(100vh - var(--slideTop) - var(--slideBottom));
-      object-fit: contain;
-      object-position: center center;
+      z-index: 5;
+      pointer-events: none;
       opacity: 0;
       transform: translateX(0) translateY(0) scale(1) rotate(0deg);
       will-change: opacity, transform;
-      z-index: 5;
-      pointer-events: none;
-      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.35));
     }
 
-    .visible {
+    .slide-media.visible {
       opacity: 1;
+    }
+
+    .slide-image,
+    .slide-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.35));
+      background: transparent;
+    }
+
+    .slide-video {
+      display: none;
+    }
+
+    .slide-media.video-mode .slide-video {
+      display: block;
+    }
+
+    .slide-media.video-mode .slide-image {
+      display: none;
     }
 
     .top-bar {
@@ -494,8 +515,15 @@
     <img id="bgSlideB" class="bg-slide" alt="">
     <div class="backdrop-overlay"></div>
 
-    <img id="slideA" class="slide visible" alt="Plakat A">
-    <img id="slideB" class="slide" alt="Plakat B">
+    <div id="slideA" class="slide-media visible">
+      <img class="slide-image" alt="Plakat A">
+      <video class="slide-video" muted playsinline preload="auto"></video>
+    </div>
+
+    <div id="slideB" class="slide-media">
+      <img class="slide-image" alt="Plakat B">
+      <video class="slide-video" muted playsinline preload="auto"></video>
+    </div>
 
     <div class="top-bar">
       <div class="top-message-wrap">
@@ -528,8 +556,9 @@
   <script>
     const normalSlideDuration = 8000;
     const longSlideDuration = 30000;
-    const reloadInterval = 300000;
-    const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
+    const reloadInterval = 900000;
+    const validImageExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
+    const validVideoExtensions = /\.(mp4|webm|mov)$/i;
     const topMessageIntervalMs = 60000;
 
     let config = null;
@@ -592,6 +621,34 @@
     function getMode() {
       const params = new URLSearchParams(window.location.search);
       return params.get("ekran") || "moksial";
+    }
+
+    function getMediaEls(slideEl) {
+      return {
+        image: slideEl.querySelector(".slide-image"),
+        video: slideEl.querySelector(".slide-video")
+      };
+    }
+
+    function isImageFile(src) {
+      return validImageExtensions.test(src || "");
+    }
+
+    function isVideoFile(src) {
+      return validVideoExtensions.test(src || "");
+    }
+
+    function getFileName(src) {
+      return (src || "").split("/").pop().toLowerCase();
+    }
+
+    function isLongSlide(src) {
+      return getFileName(src).includes("dluzej");
+    }
+
+    function getSlideDurationForSrc(src) {
+      if (isVideoFile(src)) return null;
+      return isLongSlide(src) ? longSlideDuration : normalSlideDuration;
     }
 
     async function loadConfig() {
@@ -666,9 +723,7 @@
         ? config.topMessages
         : ["Miłego dnia", "Dobrze, że tu jesteś", "Dobrego dnia"];
 
-      const firstMessage = getRandomTopMessage();
-      topMessageEl.textContent = firstMessage;
-
+      topMessageEl.textContent = getRandomTopMessage();
       startTopMessages();
     }
 
@@ -707,20 +762,17 @@
     function updateClock() {
       const now = new Date();
 
-      const time = now.toLocaleTimeString("pl-PL", {
+      clockEl.textContent = now.toLocaleTimeString("pl-PL", {
         hour: "2-digit",
         minute: "2-digit"
       });
 
-      const date = now.toLocaleDateString("pl-PL", {
+      dateEl.textContent = now.toLocaleDateString("pl-PL", {
         weekday: "short",
         day: "2-digit",
         month: "2-digit",
         year: "numeric"
       });
-
-      clockEl.textContent = time;
-      dateEl.textContent = date;
     }
 
     function buildTickerText() {
@@ -801,15 +853,17 @@
       slide.style.transition = "none";
       slide.style.opacity = "0";
       slide.style.transform = "translateX(0) translateY(0) scale(1) rotate(0deg)";
-    }
 
-    function isLongSlide(src) {
-      const fileName = (src || "").split('/').pop().toLowerCase();
-      return fileName.includes("dluzej");
-    }
-
-    function getSlideDurationForSrc(src) {
-      return isLongSlide(src) ? longSlideDuration : normalSlideDuration;
+      const { image, video } = getMediaEls(slide);
+      slide.classList.remove("video-mode");
+      image.src = "";
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      video.onended = null;
+      video.onerror = null;
+      image.onload = null;
+      image.onerror = null;
     }
 
     function stopSlideTimer() {
@@ -823,9 +877,7 @@
     function startSlideTimer(durationMs, src) {
       stopSlideTimer();
 
-      if (!isLongSlide(src)) {
-        return;
-      }
+      if (!durationMs || !isLongSlide(src)) return;
 
       slideCountdown = Math.ceil(durationMs / 1000);
       slideTimerEl.textContent = `${slideCountdown} s`;
@@ -833,12 +885,10 @@
 
       slideTimerInterval = setInterval(() => {
         slideCountdown -= 1;
-
         if (slideCountdown <= 0) {
           stopSlideTimer();
           return;
         }
-
         slideTimerEl.textContent = `${slideCountdown} s`;
       }, 1000);
     }
@@ -856,6 +906,8 @@
     }
 
     function applyTransition(slideIn, slideOut, transition, transitionDurationMs) {
+      slideIn.classList.remove("visible");
+      slideOut.classList.add ? null : null;
       resetSlideState(slideIn);
 
       if (transition.name === "fade") {
@@ -870,7 +922,7 @@
       if (transition.name === "zoom") {
         slideIn.style.transform = "scale(1.06)";
         slideIn.offsetHeight;
-        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out, transform ${transitionDurationMs}ms linear`;
+        slideIn.style.transition = `opacity ${transition.inDuration}ms ease-in-out, transform ${transitionDurationMs || normalSlideDuration}ms linear`;
         slideOut.style.transition = `opacity ${transition.outDuration}ms ease-in-out`;
         slideIn.style.opacity = "1";
         slideIn.style.transform = "scale(1)";
@@ -931,7 +983,32 @@
 
     function scheduleNextSlide(durationMs) {
       if (currentTimer) clearTimeout(currentTimer);
+      if (!durationMs) return;
       currentTimer = setTimeout(showNextSlide, durationMs);
+    }
+
+    function prepareSlideWithImage(slideEl, src, onReady, onError) {
+      const { image, video } = getMediaEls(slideEl);
+      slideEl.classList.remove("video-mode");
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+
+      image.onload = onReady;
+      image.onerror = onError;
+      image.src = src;
+    }
+
+    function prepareSlideWithVideo(slideEl, src, onReady, onEnded, onError) {
+      const { image, video } = getMediaEls(slideEl);
+      slideEl.classList.add("video-mode");
+      image.src = "";
+
+      video.onloadeddata = onReady;
+      video.onended = onEnded;
+      video.onerror = onError;
+      video.src = src;
+      video.load();
     }
 
     function showNextSlide() {
@@ -943,21 +1020,55 @@
       const nextSrc = images[currentIndex];
       const nextDuration = getSlideDurationForSrc(nextSrc);
 
-      next.onload = () => {
-        switchBackground(nextSrc);
-        applyTransition(next, current, transition, nextDuration);
-        startSlideTimer(nextDuration, nextSrc);
-        activeSlide = activeSlide === 0 ? 1 : 0;
-        currentIndex = (currentIndex + 1) % images.length;
-        scheduleNextSlide(nextDuration);
-      };
+      if (isImageFile(nextSrc)) {
+        prepareSlideWithImage(
+          next,
+          nextSrc,
+          () => {
+            switchBackground(nextSrc);
+            applyTransition(next, current, transition, nextDuration);
+            startSlideTimer(nextDuration, nextSrc);
+            activeSlide = activeSlide === 0 ? 1 : 0;
+            currentIndex = (currentIndex + 1) % images.length;
+            scheduleNextSlide(nextDuration);
+          },
+          () => {
+            currentIndex = (currentIndex + 1) % images.length;
+            scheduleNextSlide(normalSlideDuration);
+          }
+        );
+        return;
+      }
 
-      next.onerror = () => {
-        currentIndex = (currentIndex + 1) % images.length;
-        scheduleNextSlide(normalSlideDuration);
-      };
+      if (isVideoFile(nextSrc)) {
+        prepareSlideWithVideo(
+          next,
+          nextSrc,
+          () => {
+            switchBackground(nextSrc);
+            applyTransition(next, current, transition, normalSlideDuration);
+            stopSlideTimer();
 
-      next.src = nextSrc;
+            const { video } = getMediaEls(next);
+            video.currentTime = 0;
+            video.play().catch(() => {});
+
+            activeSlide = activeSlide === 0 ? 1 : 0;
+            currentIndex = (currentIndex + 1) % images.length;
+          },
+          () => {
+            showNextSlide();
+          },
+          () => {
+            currentIndex = (currentIndex + 1) % images.length;
+            showNextSlide();
+          }
+        );
+        return;
+      }
+
+      currentIndex = (currentIndex + 1) % images.length;
+      scheduleNextSlide(normalSlideDuration);
     }
 
     async function loadImages() {
@@ -968,10 +1079,10 @@
         const data = await response.json();
         if (!Array.isArray(data)) throw new Error("Plik JSON nie zawiera listy");
 
-        images = data.filter(file => validExtensions.test(file));
+        images = data.filter(file => validImageExtensions.test(file) || validVideoExtensions.test(file));
 
         if (images.length === 0) {
-          throw new Error("Brak plakatów w pliku JSON");
+          throw new Error("Brak plakatów lub filmów w pliku JSON");
         }
 
         hideMessage();
@@ -997,20 +1108,52 @@
         firstBg.classList.add("bg-visible");
       };
 
-      first.onload = () => {
-        first.style.transition = "opacity 1200ms ease-in-out";
-        first.style.opacity = "1";
-        first.classList.add("visible");
-        startSlideTimer(firstDuration, firstSrc);
-        currentIndex = (currentIndex + 1) % images.length;
-        scheduleNextSlide(firstDuration);
-      };
+      if (isImageFile(firstSrc)) {
+        prepareSlideWithImage(
+          first,
+          firstSrc,
+          () => {
+            first.style.transition = "opacity 1200ms ease-in-out";
+            first.style.opacity = "1";
+            first.classList.add("visible");
+            startSlideTimer(firstDuration, firstSrc);
+            currentIndex = (currentIndex + 1) % images.length;
+            scheduleNextSlide(firstDuration);
+          },
+          () => {
+            showMessage("Nie udało się załadować pierwszego plakatu.", true);
+          }
+        );
+        return;
+      }
 
-      first.onerror = () => {
-        showMessage("Nie udało się załadować pierwszego plakatu.", true);
-      };
+      if (isVideoFile(firstSrc)) {
+        prepareSlideWithVideo(
+          first,
+          firstSrc,
+          () => {
+            first.style.transition = "opacity 1200ms ease-in-out";
+            first.style.opacity = "1";
+            first.classList.add("visible");
+            stopSlideTimer();
 
-      first.src = firstSrc;
+            const { video } = getMediaEls(first);
+            video.currentTime = 0;
+            video.play().catch(() => {});
+
+            currentIndex = (currentIndex + 1) % images.length;
+          },
+          () => {
+            showNextSlide();
+          },
+          () => {
+            showMessage("Nie udało się załadować pierwszego filmu.", true);
+          }
+        );
+        return;
+      }
+
+      showMessage("Nieobsługiwany typ pierwszego pliku.", true);
     }
 
     async function init() {
