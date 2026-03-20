@@ -37,43 +37,4 @@
     "rgba(26, 74, 110, 0.40)",
     "rgba(14, 24, 42, 0.58)"
   ]
-}{
-  "title": "Ekrany Hybryda",
-  "postersJson": "plakaty-hybryda.json",
-  "qrImage": "qr-miasto.png",
-  "clockColor": "#ffffff",
-  "tickerTextColor": "#ffffff",
-  "topMessageColor": "rgba(255,255,255,0.96)",
-  "tickerSpeed": 75,
-  "tickerPauseMs": 5000,
-  "tickerItems": [
-    "Zapraszamy na wydarzenia MOKSiAL i aktualności miasta Szklarska Poręba",
-    "Na ekranie znajdą Państwo kulturę, wydarzenia, atrakcje i ważne informacje",
-    "Śledź repertuar, wydarzenia i komunikaty na bieżąco",
-    "Zeskanuj kod QR i dowiedz się więcej >>>"
-  ],
-  "topMessages": [
-    "Witamy",
-    "Miłego dnia",
-    "Dobrze, że tu jesteś",
-    "Zapraszamy",
-    "Sprawdź, co dzieje się dziś",
-    "Miłego pobytu",
-    "Życzymy dobrego dnia",
-    "Miłego wieczoru"
-  ],
-  "topGradient": [
-    "rgba(26, 58, 110, 0.46)",
-    "rgba(62, 33, 108, 0.38)",
-    "rgba(129, 39, 92, 0.30)",
-    "rgba(35, 86, 124, 0.36)",
-    "rgba(18, 28, 52, 0.52)"
-  ],
-  "bottomGradient": [
-    "rgba(18, 36, 68, 0.54)",
-    "rgba(34, 36, 82, 0.46)",
-    "rgba(92, 28, 88, 0.38)",
-    "rgba(26, 74, 110, 0.40)",
-    "rgba(14, 24, 42, 0.58)"
-  ]
 }
