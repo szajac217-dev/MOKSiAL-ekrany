@@ -597,16 +597,23 @@
       return params.get("ekran") || "moksial";
     }
 
-    async function loadConfig() {
-      const mode = getMode();
-      const configFile = mode === "miasto" ? "config-miasto.json" : "config-moksial.json";
+   async function loadConfig() {
+  const mode = getMode();
 
-      const response = await fetch(configFile, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Nie udało się wczytać ${configFile}`);
+  let configFile = "config-moksial.json";
 
-      config = await response.json();
-      applyConfig();
-    }
+  if (mode === "miasto") {
+    configFile = "config-miasto.json";
+  } else if (mode === "hybryda") {
+    configFile = "config-hybryda.json";
+  }
+
+  const response = await fetch(configFile, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Nie udało się wczytać ${configFile}`);
+
+  config = await response.json();
+  applyConfig();
+}
 
     function clearTopMessageEffects() {
       topMessageEl.classList.remove(
