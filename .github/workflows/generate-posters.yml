@@ -1,4 +1,4 @@
-name: Generate posters json files
+name: Generate poster JSON files
 
 on:
   push:
@@ -18,47 +18,52 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate JSON files
-        shell: bash
         run: |
-          python3 - <<'PY'
+          python << 'EOF'
           import os
           import json
 
-          folders = {
-    "Plakaty-MOKSiAL": "plakaty-moksial.json",
-    "Plakaty-Miasto": "plakaty-miasto.json",
-    "Plakaty-Hybryda": "plakaty-hybryda.json"
-}
-          allowed = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+          def get_images(folder):
+              if not os.path.exists(folder):
+                  return []
 
-          for folder, output_file in folders.items():
+              valid_ext = ('.jpg', '.jpeg', '.png', '.webp', '.gif')
               files = []
-              if os.path.isdir(folder):
-                  for name in sorted(os.listdir(folder)):
-                      path = os.path.join(folder, name)
-                      ext = os.path.splitext(name)[1].lower()
-                      if os.path.isfile(path) and ext in allowed:
-                          files.append(f"{folder}/{name}")
 
+              for f in sorted(os.listdir(folder)):
+                  path = os.path.join(folder, f)
+                  if os.path.isfile(path) and f.lower().endswith(valid_ext):
+                      files.append(f"{folder}/{f}")
+
+              return files
+
+          # osobne listy
+          moksial_images = get_images("Plakaty-MOKSiAL")
+          miasto_images = get_images("Plakaty-Miasto")
+
+          # hybryda = połączenie obu folderów
+          hybryda_images = moksial_images + miasto_images
+
+          outputs = {
+              "plakaty-moksial.json": moksial_images,
+              "plakaty-miasto.json": miasto_images,
+              "plakaty-hybryda.json": hybryda_images
+          }
+
+          for output_file, images in outputs.items():
               with open(output_file, "w", encoding="utf-8") as f:
-                  json.dump(files, f, ensure_ascii=False, indent=2)
-                  f.write("\n")
+                  json.dump(images, f, ensure_ascii=False, indent=2)
 
               print(f"Wygenerowano {output_file}:")
-              print(json.dumps(files, ensure_ascii=False, indent=2))
-          PY
+              print(json.dumps(images, ensure_ascii=False, indent=2))
+          EOF
 
       - name: Commit and push if changed
-        shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           git add plakaty-moksial.json plakaty-miasto.json plakaty-hybryda.json
 
-          if git diff --cached --quiet; then
-            echo "Brak zmian"
-          else
-            git commit -m "Automatyczna aktualizacja list plakatów"
-            git push
-          fi
+          git diff --cached --quiet || git commit -m "Automatyczna aktualizacja list plakatów"
+          git push
