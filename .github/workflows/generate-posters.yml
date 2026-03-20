@@ -25,10 +25,10 @@ jobs:
           import json
 
           folders = {
-              "Plakaty-MOKSiAL": "plakaty-moksial.json",
-              "Plakaty-Miasto": "plakaty-miasto.json"
-          }
-
+    "Plakaty-MOKSiAL": "plakaty-moksial.json",
+    "Plakaty-Miasto": "plakaty-miasto.json",
+    "Plakaty-Hybryda": "plakaty-hybryda.json"
+}
           allowed = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
           for folder, output_file in folders.items():
@@ -54,7 +54,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add plakaty-moksial.json plakaty-miasto.json
+          git add plakaty-moksial.json plakaty-miasto.json plakaty-hybryda.json
 
           if git diff --cached --quiet; then
             echo "Brak zmian"
