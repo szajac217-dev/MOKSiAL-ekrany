@@ -1,4 +1,4 @@
-name: Generate poster JSON files
+name: Generate poster JSON files,
 
 on:
   push:
