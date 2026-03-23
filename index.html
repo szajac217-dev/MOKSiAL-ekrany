@@ -154,12 +154,7 @@
         0 10px 34px rgba(0,0,0,0.28),
         inset 0 1px 0 rgba(255,255,255,0.14),
         inset 0 -10px 18px rgba(0,0,0,0.08);
-      transition: opacity 420ms ease, transform 420ms ease;
-    }
-
-    .top-bar.theme-soft-fade {
-      opacity: 0.78;
-      transform: translateY(2px);
+      transition: background 900ms ease, box-shadow 900ms ease, border-color 900ms ease;
     }
 
     .top-bar::before {
@@ -278,18 +273,16 @@
         0 0 4px rgba(255,255,255,0.12),
         0 0 12px rgba(255,255,255,0.08),
         0 0 24px rgba(255,255,255,0.04);
-      transition: color 650ms ease, text-shadow 650ms ease;
+      transition: color 700ms ease;
     }
 
     .date {
-      margin-top: 8px;
-      color: rgba(255, 255, 255, 0.97);
-      font-size: 18px;
+      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.94);
+      font-size: 14px;
       text-align: right;
-      letter-spacing: 0.45px;
-      font-weight: 600;
+      letter-spacing: 0.4px;
       text-shadow: 0 2px 8px rgba(0,0,0,0.24);
-      transition: color 650ms ease, text-shadow 650ms ease;
     }
 
     .ticker-bar {
@@ -326,12 +319,7 @@
         0 12px 34px rgba(0,0,0,0.28),
         inset 0 1px 0 rgba(255,255,255,0.12),
         inset 0 -10px 18px rgba(0,0,0,0.10);
-      transition: opacity 420ms ease, transform 420ms ease;
-    }
-
-    .ticker-bar.theme-soft-fade {
-      opacity: 0.78;
-      transform: translateY(2px);
+      transition: background 900ms ease, box-shadow 900ms ease, border-color 900ms ease;
     }
 
     .ticker-bar::before {
@@ -381,7 +369,7 @@
         0 2px 10px rgba(0,0,0,0.42),
         0 0 16px rgba(0,0,0,0.20);
       white-space: nowrap;
-      transition: color 650ms ease, text-shadow 650ms ease;
+      transition: color 700ms ease;
     }
 
     .qr-box {
@@ -415,7 +403,7 @@
       object-fit: contain;
       display: block;
       opacity: 1;
-      transition: opacity 520ms ease;
+      transition: opacity 350ms ease-in-out;
     }
 
     .slide-timer {
@@ -485,7 +473,7 @@
       }
 
       .date {
-        font-size: 15px;
+        font-size: 12px;
       }
 
       .ticker-text {
@@ -549,13 +537,14 @@
   <script>
     const normalSlideDuration = 8000;
     const longSlideDuration = 30000;
-    const reloadInterval = 300000;
+    const reloadInterval = 900000;
     const validExtensions = /\.(jpg|jpeg|png|webp|gif)$/i;
     const topMessageIntervalMs = 60000;
 
     let config = null;
+    let configMoksial = null;
+    let configMiasto = null;
     let images = [];
-    let displayQueue = [];
     let currentIndex = 0;
     let activeSlide = 0;
     let activeBg = 0;
@@ -565,6 +554,7 @@
     let topMessages = [];
     let lastTopMessageIndex = -1;
     let topMessageTimer = null;
+    let currentThemeKey = "";
 
     let slideTimerInterval = null;
     let slideCountdown = 0;
@@ -575,8 +565,6 @@
     const bgSlideB = document.getElementById("bgSlideB");
 
     const messageBox = document.getElementById("message");
-    const topBarEl = document.querySelector(".top-bar");
-    const tickerBarEl = document.querySelector(".ticker-bar");
     const clockEl = document.getElementById("clock");
     const dateEl = document.getElementById("date");
     const qrImage = document.getElementById("qrImage");
@@ -670,187 +658,6 @@
       return topMessageEffects[Math.floor(Math.random() * topMessageEffects.length)];
     }
 
-    function shuffleArray(array) {
-      const copy = [...array];
-
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-
-      return copy;
-    }
-
-    function rebuildDisplayQueue() {
-      if (getMode() === "hybryda") {
-        displayQueue = shuffleArray(images);
-      } else {
-        displayQueue = [...images];
-      }
-      currentIndex = 0;
-    }
-
-    function getCurrentSlideSrc() {
-      if (!displayQueue.length) return "";
-      if (currentIndex >= displayQueue.length) {
-        rebuildDisplayQueue();
-      }
-      return displayQueue[currentIndex] || "";
-    }
-
-    function advanceQueue() {
-      currentIndex += 1;
-      if (currentIndex >= displayQueue.length) {
-        rebuildDisplayQueue();
-      }
-    }
-
-    function triggerThemeFade() {
-      topBarEl.classList.add("theme-soft-fade");
-      tickerBarEl.classList.add("theme-soft-fade");
-
-      setTimeout(() => {
-        topBarEl.classList.remove("theme-soft-fade");
-        tickerBarEl.classList.remove("theme-soft-fade");
-      }, 420);
-    }
-
-    function applyConfig() {
-      document.title = config.title || "Ekrany informacyjne";
-
-      const root = document.documentElement;
-      root.style.setProperty("--top-grad-1", config.topGradient[0]);
-      root.style.setProperty("--top-grad-2", config.topGradient[1]);
-      root.style.setProperty("--top-grad-3", config.topGradient[2]);
-      root.style.setProperty("--top-grad-4", config.topGradient[3]);
-      root.style.setProperty("--top-grad-5", config.topGradient[4]);
-
-      root.style.setProperty("--bottom-grad-1", config.bottomGradient[0]);
-      root.style.setProperty("--bottom-grad-2", config.bottomGradient[1]);
-      root.style.setProperty("--bottom-grad-3", config.bottomGradient[2]);
-      root.style.setProperty("--bottom-grad-4", config.bottomGradient[3]);
-      root.style.setProperty("--bottom-grad-5", config.bottomGradient[4]);
-
-      root.style.setProperty("--clock-color", config.clockColor || "#ff5b67");
-      root.style.setProperty("--ticker-text-color", config.tickerTextColor || "#ffffff");
-      root.style.setProperty("--top-message-color", config.topMessageColor || "rgba(255,255,255,0.96)");
-
-      qrBox.style.display = "flex";
-
-      qrImage.onerror = () => {
-        qrBox.style.display = "none";
-      };
-
-      qrImage.onload = () => {
-        qrBox.style.display = "flex";
-      };
-
-      qrImage.src = config.qrImage + "?v=" + Date.now();
-
-      topMessages = config.topMessages && config.topMessages.length
-        ? config.topMessages
-        : ["Miłego dnia", "Dobrze, że tu jesteś", "Dobrego dnia"];
-
-      const firstMessage = getRandomTopMessage();
-      topMessageEl.textContent = firstMessage;
-
-      currentThemeKey = getMode() === "miasto" ? "miasto" : "moksial";
-
-      startTopMessages();
-    }
-
-    function getThemeKeyForSlide(src) {
-      const path = (src || "").toLowerCase();
-
-      if (path.includes("plakaty-miasto")) {
-        return "miasto";
-      }
-
-      if (path.includes("plakaty-moksial")) {
-        return "moksial";
-      }
-
-      return "moksial";
-    }
-
-    function applyThemeByKey(themeKey) {
-      let themeConfig = configMoksial;
-
-      if (themeKey === "miasto") {
-        themeConfig = configMiasto;
-      }
-
-      triggerThemeFade();
-
-      const root = document.documentElement;
-
-      setTimeout(() => {
-        root.style.setProperty("--top-grad-1", themeConfig.topGradient[0]);
-        root.style.setProperty("--top-grad-2", themeConfig.topGradient[1]);
-        root.style.setProperty("--top-grad-3", themeConfig.topGradient[2]);
-        root.style.setProperty("--top-grad-4", themeConfig.topGradient[3]);
-        root.style.setProperty("--top-grad-5", themeConfig.topGradient[4]);
-
-        root.style.setProperty("--bottom-grad-1", themeConfig.bottomGradient[0]);
-        root.style.setProperty("--bottom-grad-2", themeConfig.bottomGradient[1]);
-        root.style.setProperty("--bottom-grad-3", themeConfig.bottomGradient[2]);
-        root.style.setProperty("--bottom-grad-4", themeConfig.bottomGradient[3]);
-        root.style.setProperty("--bottom-grad-5", themeConfig.bottomGradient[4]);
-
-        root.style.setProperty("--clock-color", themeConfig.clockColor || "#ff5b67");
-        root.style.setProperty("--ticker-text-color", themeConfig.tickerTextColor || "#ffffff");
-        root.style.setProperty("--top-message-color", themeConfig.topMessageColor || "rgba(255,255,255,0.96)");
-
-        qrBox.style.display = "flex";
-        qrImage.style.opacity = "0";
-
-        setTimeout(() => {
-          qrImage.src = themeConfig.qrImage + "?v=" + Date.now();
-          qrImage.onload = () => {
-            qrImage.style.opacity = "1";
-            qrBox.style.display = "flex";
-          };
-          qrImage.onerror = () => {
-            qrBox.style.display = "none";
-          };
-        }, 180);
-
-        topMessages = themeConfig.topMessages && themeConfig.topMessages.length
-          ? themeConfig.topMessages
-          : ["Miłego dnia", "Dobrze, że tu jesteś", "Dobrego dnia"];
-
-        lastTopMessageIndex = -1;
-        topMessageEl.textContent = getRandomTopMessage();
-
-        if (themeConfig.tickerItems && themeConfig.tickerItems.length) {
-          config.tickerItems = themeConfig.tickerItems;
-        }
-
-        if (typeof themeConfig.tickerSpeed !== "undefined") {
-          config.tickerSpeed = themeConfig.tickerSpeed;
-        }
-
-        if (typeof themeConfig.tickerPauseMs !== "undefined") {
-          config.tickerPauseMs = themeConfig.tickerPauseMs;
-        }
-
-        startTicker();
-        currentThemeKey = themeKey;
-      }, 120);
-    }
-
-    function updateHybridThemeForSlide(src) {
-      if (getMode() !== "hybryda") {
-        return;
-      }
-
-      const themeKey = getThemeKeyForSlide(src);
-
-      if (themeKey !== currentThemeKey) {
-        applyThemeByKey(themeKey);
-      }
-    }
-
     function startTopMessages() {
       if (topMessageTimer) clearInterval(topMessageTimer);
 
@@ -873,16 +680,6 @@
       }, topMessageIntervalMs);
     }
 
-    function showMessage(text, isError = false) {
-      messageBox.textContent = text;
-      messageBox.className = isError ? "message error" : "message";
-      messageBox.style.display = "flex";
-    }
-
-    function hideMessage() {
-      messageBox.style.display = "none";
-    }
-
     function updateClock() {
       const now = new Date();
 
@@ -902,9 +699,19 @@
       dateEl.textContent = date;
     }
 
+    function showMessage(text, isError = false) {
+      messageBox.textContent = text;
+      messageBox.className = isError ? "message error" : "message";
+      messageBox.style.display = "flex";
+    }
+
+    function hideMessage() {
+      messageBox.style.display = "none";
+    }
+
     function buildTickerText() {
       const separator = "   ✦   ";
-      tickerTextEl.textContent = config.tickerItems.join(separator);
+      tickerTextEl.textContent = (config.tickerItems || []).join(separator);
     }
 
     function setupTickerMeasurements() {
@@ -957,6 +764,135 @@
       tickerRunning = true;
       lastTickerTs = 0;
       tickerAnimationFrame = requestAnimationFrame(tickerStep);
+    }
+
+    function applyThemeByKey(themeKey) {
+      let themeConfig = configMoksial;
+
+      if (themeKey === "miasto") {
+        themeConfig = configMiasto;
+      }
+
+      const root = document.documentElement;
+
+      root.style.setProperty("--top-grad-1", themeConfig.topGradient[0]);
+      root.style.setProperty("--top-grad-2", themeConfig.topGradient[1]);
+      root.style.setProperty("--top-grad-3", themeConfig.topGradient[2]);
+      root.style.setProperty("--top-grad-4", themeConfig.topGradient[3]);
+      root.style.setProperty("--top-grad-5", themeConfig.topGradient[4]);
+
+      root.style.setProperty("--bottom-grad-1", themeConfig.bottomGradient[0]);
+      root.style.setProperty("--bottom-grad-2", themeConfig.bottomGradient[1]);
+      root.style.setProperty("--bottom-grad-3", themeConfig.bottomGradient[2]);
+      root.style.setProperty("--bottom-grad-4", themeConfig.bottomGradient[3]);
+      root.style.setProperty("--bottom-grad-5", themeConfig.bottomGradient[4]);
+
+      root.style.setProperty("--clock-color", themeConfig.clockColor || "#ff5b67");
+      root.style.setProperty("--ticker-text-color", themeConfig.tickerTextColor || "#ffffff");
+      root.style.setProperty("--top-message-color", themeConfig.topMessageColor || "rgba(255,255,255,0.96)");
+
+      qrBox.style.display = "flex";
+      qrImage.style.opacity = "0";
+
+      setTimeout(() => {
+        qrImage.src = themeConfig.qrImage + "?v=" + Date.now();
+        qrImage.onload = () => {
+          qrImage.style.opacity = "1";
+          qrBox.style.display = "flex";
+        };
+        qrImage.onerror = () => {
+          qrBox.style.display = "none";
+        };
+      }, 180);
+
+      topMessages = themeConfig.topMessages && themeConfig.topMessages.length
+        ? themeConfig.topMessages
+        : ["Miłego dnia", "Dobrze, że tu jesteś", "Dobrego dnia"];
+
+      lastTopMessageIndex = -1;
+      topMessageEl.textContent = getRandomTopMessage();
+
+      if (themeConfig.tickerItems && themeConfig.tickerItems.length) {
+        config.tickerItems = themeConfig.tickerItems;
+      }
+
+      if (typeof themeConfig.tickerSpeed !== "undefined") {
+        config.tickerSpeed = themeConfig.tickerSpeed;
+      }
+
+      if (typeof themeConfig.tickerPauseMs !== "undefined") {
+        config.tickerPauseMs = themeConfig.tickerPauseMs;
+      }
+
+      startTicker();
+      currentThemeKey = themeKey;
+    }
+
+    function getThemeKeyForSlide(src) {
+      const path = (src || "").toLowerCase();
+
+      if (path.includes("plakaty-miasto")) {
+        return "miasto";
+      }
+
+      if (path.includes("plakaty-moksial")) {
+        return "moksial";
+      }
+
+      return "moksial";
+    }
+
+    function updateHybridThemeForSlide(src) {
+      if (getMode() !== "hybryda") {
+        return;
+      }
+
+      const themeKey = getThemeKeyForSlide(src);
+
+      if (themeKey !== currentThemeKey) {
+        applyThemeByKey(themeKey);
+      }
+    }
+
+    function applyConfig() {
+      document.title = config.title || "Ekrany informacyjne";
+
+      const root = document.documentElement;
+      root.style.setProperty("--top-grad-1", config.topGradient[0]);
+      root.style.setProperty("--top-grad-2", config.topGradient[1]);
+      root.style.setProperty("--top-grad-3", config.topGradient[2]);
+      root.style.setProperty("--top-grad-4", config.topGradient[3]);
+      root.style.setProperty("--top-grad-5", config.topGradient[4]);
+
+      root.style.setProperty("--bottom-grad-1", config.bottomGradient[0]);
+      root.style.setProperty("--bottom-grad-2", config.bottomGradient[1]);
+      root.style.setProperty("--bottom-grad-3", config.bottomGradient[2]);
+      root.style.setProperty("--bottom-grad-4", config.bottomGradient[3]);
+      root.style.setProperty("--bottom-grad-5", config.bottomGradient[4]);
+
+      root.style.setProperty("--clock-color", config.clockColor || "#ff5b67");
+      root.style.setProperty("--ticker-text-color", config.tickerTextColor || "#ffffff");
+      root.style.setProperty("--top-message-color", config.topMessageColor || "rgba(255,255,255,0.96)");
+
+      qrBox.style.display = "flex";
+      qrImage.onerror = () => {
+        qrBox.style.display = "none";
+      };
+      qrImage.onload = () => {
+        qrBox.style.display = "flex";
+      };
+      qrImage.src = config.qrImage + "?v=" + Date.now();
+
+      topMessages = config.topMessages && config.topMessages.length
+        ? config.topMessages
+        : ["Miłego dnia", "Dobrze, że tu jesteś", "Dobrego dnia"];
+
+      lastTopMessageIndex = -1;
+      topMessageEl.textContent = getRandomTopMessage();
+
+      currentThemeKey = getMode() === "miasto" ? "miasto" : "moksial";
+
+      startTopMessages();
     }
 
     function getActiveSlide() {
@@ -1119,7 +1055,7 @@
       const current = getActiveSlide();
       const next = getInactiveSlide();
       const transition = getRandomTransition();
-      const nextSrc = getCurrentSlideSrc();
+      const nextSrc = images[currentIndex];
       const nextDuration = getSlideDurationForSrc(nextSrc);
 
       updateHybridThemeForSlide(nextSrc);
@@ -1129,12 +1065,12 @@
         applyTransition(next, current, transition, nextDuration);
         startSlideTimer(nextDuration, nextSrc);
         activeSlide = activeSlide === 0 ? 1 : 0;
-        advanceQueue();
+        currentIndex = (currentIndex + 1) % images.length;
         scheduleNextSlide(nextDuration);
       };
 
       next.onerror = () => {
-        advanceQueue();
+        currentIndex = (currentIndex + 1) % images.length;
         scheduleNextSlide(normalSlideDuration);
       };
 
@@ -1155,8 +1091,6 @@
           throw new Error("Brak plakatów w pliku JSON");
         }
 
-        rebuildDisplayQueue();
-
         hideMessage();
 
         if (!slideshowStarted) {
@@ -1172,7 +1106,7 @@
     function startSlideshow() {
       const first = getActiveSlide();
       const firstBg = getActiveBg();
-      const firstSrc = getCurrentSlideSrc();
+      const firstSrc = images[currentIndex];
       const firstDuration = getSlideDurationForSrc(firstSrc);
 
       updateHybridThemeForSlide(firstSrc);
@@ -1187,7 +1121,7 @@
         first.style.opacity = "1";
         first.classList.add("visible");
         startSlideTimer(firstDuration, firstSrc);
-        advanceQueue();
+        currentIndex = (currentIndex + 1) % images.length;
         scheduleNextSlide(firstDuration);
       };
 
