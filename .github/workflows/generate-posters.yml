@@ -5,6 +5,8 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    - cron: "5 0 * * *"
 
 permissions:
   contents: write
@@ -22,6 +24,26 @@ jobs:
           python << 'EOF'
           import os
           import json
+          import re
+          from datetime import date
+
+          DATE_PATTERN = re.compile(r'(\d{4}-\d{2}-\d{2})')
+
+          def is_active_file(filename):
+              match = DATE_PATTERN.search(filename)
+              if not match:
+                  return True
+
+              try:
+                  file_date = date.fromisoformat(match.group(1))
+              except ValueError:
+                  return True
+
+              today = date.today()
+
+              # plakat widoczny do końca dnia z nazwy pliku
+              # znika dopiero następnego dnia po północy
+              return file_date >= today
 
           def get_images(folder):
               if not os.path.exists(folder):
@@ -32,7 +54,12 @@ jobs:
 
               for f in sorted(os.listdir(folder)):
                   path = os.path.join(folder, f)
-                  if os.path.isfile(path) and f.lower().endswith(valid_ext):
+
+                  if (
+                      os.path.isfile(path)
+                      and f.lower().endswith(valid_ext)
+                      and is_active_file(f)
+                  ):
                       files.append(f"{folder}/{f}")
 
               return files
