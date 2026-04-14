@@ -1,0 +1,9 @@
+1. Nazwa pliku musi zaczynać się od daty:
+   2026-04-20_nazwa.jpg
+
+2. Format plakatu pionowy - najlpeiej 1080x1920  
+
+3. Bez spacji i dziwnych znaków
+
+4. Opcjonalnie:
+   _dluzej → Dopisujemy do nazwy, jeśli plakat ma się wyświetlać dłużej (30s) 
