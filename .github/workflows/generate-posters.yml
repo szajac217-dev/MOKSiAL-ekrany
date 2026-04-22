@@ -132,7 +132,7 @@ jobs:
                       ensure_ascii=False,
                       indent=2
                   )
-                  f.write("\\n")
+                  f.write("\n")
 
               print(f"\\nWygenerowano: {output_file}")
               print(
