@@ -35,17 +35,14 @@ jobs:
           #
           # ZASADY:
           # 1. stare plakaty znikają automatycznie
-          # 2. najbliższe wydarzenia lecą jako pierwsze
-          # 3. pliki bez daty trafiają na koniec
+          # 2. w każdym folderze najbliższe wydarzenia lecą jako pierwsze
+          # 3. pliki bez daty trafiają na koniec danego folderu
+          # 4. hybryda = najpierw MOKSiAL, potem Miasto
           # =========================
 
           DATE_PATTERN = re.compile(r'^(\d{4}-\d{2}-\d{2})')
 
           def is_active_file(filename):
-              """
-              Sprawdza czy plakat ma być jeszcze wyświetlany
-              """
-
               match = DATE_PATTERN.match(filename)
 
               # brak daty = plakat zostaje
@@ -60,18 +57,10 @@ jobs:
               today = date.today()
 
               # plakat widoczny do końca dnia z nazwy
-              # znika dopiero po północy następnego dnia
               return file_date >= today
 
 
           def sort_key(filename):
-              """
-              Sortowanie:
-              1. najbliższa data najpierw
-              2. dalsze wydarzenia później
-              3. bez daty na końcu
-              """
-
               match = DATE_PATTERN.match(filename)
 
               if match:
@@ -81,15 +70,11 @@ jobs:
                   except ValueError:
                       pass
 
-              # brak daty → na koniec
+              # brak daty = na koniec
               return (1, date.max, filename.lower())
 
 
           def get_images(folder):
-              """
-              Pobiera aktywne plakaty z folderu
-              """
-
               if not os.path.exists(folder):
                   return []
 
@@ -113,11 +98,9 @@ jobs:
                   ):
                       files.append(f"{folder}/{f}")
 
-              # sortowanie po dacie wydarzenia
+              # sortowanie w obrębie folderu po dacie
               files.sort(
-                  key=lambda x: sort_key(
-                      os.path.basename(x)
-                  )
+                  key=lambda x: sort_key(os.path.basename(x))
               )
 
               return files
@@ -130,13 +113,10 @@ jobs:
           moksial_images = get_images("Plakaty-MOKSiAL")
           miasto_images = get_images("Plakaty-Miasto")
 
-          # hybryda = oba foldery razem
-          hybryda_images = sorted(
-              moksial_images + miasto_images,
-              key=lambda x: sort_key(
-                  os.path.basename(x)
-              )
-          )
+          # HYBRYDA:
+          # najpierw cały blok MOKSiAL (już posortowany),
+          # potem cały blok Miasto (już posortowany)
+          hybryda_images = moksial_images + miasto_images
 
           outputs = {
               "plakaty-moksial.json": moksial_images,
@@ -152,9 +132,9 @@ jobs:
                       ensure_ascii=False,
                       indent=2
                   )
-                  f.write("\n")
+                  f.write("\\n")
 
-              print(f"\nWygenerowano: {output_file}")
+              print(f"\\nWygenerowano: {output_file}")
               print(
                   json.dumps(
                       images,
