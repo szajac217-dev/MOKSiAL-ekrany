@@ -1,7 +1,7 @@
 1. Nazwa pliku musi zaczynać się od daty:
    2026-04-20_nazwa.jpg  
-   -Wyświetla sie do "daty w nazwie" 00:00 godziny.
-- Bez daty będzie się wyświetlał cały czas
+   - Wyświetla sie do "daty w nazwie" 00:00 godziny.
+   - Bez daty będzie się wyświetlał cały czas
 2. Format plakatu pionowy - najlpeiej 1080x1920 - większa rozdzielczość = LEPIEJ
 
 3. Nazwy bez spacji i dziwnych znaków
