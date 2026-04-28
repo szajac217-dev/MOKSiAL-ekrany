@@ -29,63 +29,51 @@ jobs:
           import re
           from datetime import date
 
-          # =========================
-          # FORMAT DATY W NAZWIE:
-          # 2026-04-25_koncert.jpg
-          #
-          # ZASADY:
-          # 1. stare plakaty znikają automatycznie
-          # 2. w każdym folderze najbliższe wydarzenia lecą jako pierwsze
-          # 3. pliki bez daty trafiają na koniec danego folderu
-          # 4. hybryda = najpierw MOKSiAL, potem Miasto
-          # =========================
+          DATE_PATTERN = re.compile(r'(\d{4}-\d{2}-\d{2})')
+          WEIGHT_PATTERN = re.compile(r'(?i)(?:^|[_\\-\\s])W(10|[1-9])(?:[_\\-\\s.]|$)')
 
-          DATE_PATTERN = re.compile(r'^(\d{4}-\d{2}-\d{2})')
-
-          def is_active_file(filename):
-              match = DATE_PATTERN.match(filename)
-
-              # brak daty = plakat zostaje
+          def get_file_date(filename):
+              match = DATE_PATTERN.search(filename)
               if not match:
-                  return True
+                  return None
 
               try:
-                  file_date = date.fromisoformat(match.group(1))
+                  return date.fromisoformat(match.group(1))
               except ValueError:
+                  return None
+
+          def get_weight(filename):
+              match = WEIGHT_PATTERN.search(filename)
+              if not match:
+                  return 0
+
+              return int(match.group(1))
+
+          def is_active_file(filename):
+              file_date = get_file_date(filename)
+
+              # Brak daty = plakat stały, zostaje w systemie
+              if file_date is None:
                   return True
 
-              today = date.today()
-
-              # plakat widoczny do końca dnia z nazwy
-              return file_date >= today
-
+              # Plakat znika dopiero następnego dnia po dacie z nazwy
+              return file_date >= date.today()
 
           def sort_key(filename):
-              match = DATE_PATTERN.match(filename)
+              file_date = get_file_date(filename)
+              weight = get_weight(filename)
 
-              if match:
-                  try:
-                      file_date = date.fromisoformat(match.group(1))
-                      return (0, file_date, filename.lower())
-                  except ValueError:
-                      pass
+              # Pliki bez daty lecą za plikami z datą w tej samej wadze
+              sort_date = file_date if file_date is not None else date.max
 
-              # brak daty = na koniec
-              return (1, date.max, filename.lower())
-
+              # Najpierw najwyższa waga, potem najbliższa data
+              return (-weight, sort_date, filename.lower())
 
           def get_images(folder):
               if not os.path.exists(folder):
                   return []
 
-              valid_ext = (
-                  '.jpg',
-                  '.jpeg',
-                  '.png',
-                  '.webp',
-                  '.gif'
-              )
-
+              valid_ext = ('.jpg', '.jpeg', '.png', '.webp', '.gif')
               files = []
 
               for f in os.listdir(folder):
@@ -98,24 +86,15 @@ jobs:
                   ):
                       files.append(f"{folder}/{f}")
 
-              # sortowanie w obrębie folderu po dacie
-              files.sort(
-                  key=lambda x: sort_key(os.path.basename(x))
-              )
-
+              files.sort(key=lambda x: sort_key(os.path.basename(x)))
               return files
-
-
-          # =========================
-          # GŁÓWNE FOLDERY
-          # =========================
 
           moksial_images = get_images("Plakaty-MOKSiAL")
           miasto_images = get_images("Plakaty-Miasto")
 
-          # HYBRYDA:
-          # najpierw cały blok MOKSiAL (już posortowany),
-          # potem cały blok Miasto (już posortowany)
+          # Hybryda:
+          # najpierw MOKSiAL według wagi i daty,
+          # potem Miasto według wagi i daty
           hybryda_images = moksial_images + miasto_images
 
           outputs = {
@@ -126,22 +105,11 @@ jobs:
 
           for output_file, images in outputs.items():
               with open(output_file, "w", encoding="utf-8") as f:
-                  json.dump(
-                      images,
-                      f,
-                      ensure_ascii=False,
-                      indent=2
-                  )
+                  json.dump(images, f, ensure_ascii=False, indent=2)
                   f.write("\n")
 
-              print(f"\\nWygenerowano: {output_file}")
-              print(
-                  json.dumps(
-                      images,
-                      ensure_ascii=False,
-                      indent=2
-                  )
-              )
+              print(f"Wygenerowano {output_file}:")
+              print(json.dumps(images, ensure_ascii=False, indent=2))
 
           EOF
 
@@ -150,11 +118,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add \
-            plakaty-moksial.json \
-            plakaty-miasto.json \
-            plakaty-hybryda.json
+          git add plakaty-moksial.json plakaty-miasto.json plakaty-hybryda.json
 
           git diff --cached --quiet || git commit -m "Automatyczna aktualizacja list plakatów"
-
           git push
