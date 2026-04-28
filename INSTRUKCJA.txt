@@ -9,3 +9,44 @@
 4. Opcjonalnie:
    _dluzej → Dopisujemy do nazwy, jeśli plakat ma się wyświetlać dłużej (30s) 
       2026-04-20_nazwa_dluzej.jpg - Nazwa plakatu
+
+5. Skala wag:
+
+W1 do W10
+
+Im wyższa wartość, tym wcześniej plakat zostanie wyświetlony.
+
+Przykład
+2026-05-03_swieto-konstytucji_W10.jpg
+2026-05-01_majowka_W5.jpg
+2026-05-02_koncert.jpg
+
+Kolejność wyświetlania:
+
+1. W10
+2. W5
+3. brak W
+Zasada działania
+
+System najpierw sprawdza:
+
+waga → data → nazwa
+
+czyli:
+
+najwyższa waga (W10) ma pierwszeństwo
+przy tej samej wadze decyduje najbliższa data wydarzenia
+brak oznaczenia W oznacza wagę 0
+Kiedy używać wysokiej wagi
+
+Wyższe wagi warto stosować dla:
+
+najważniejszych wydarzeń miejskich
+świąt państwowych
+dużych koncertów i festiwali
+wydarzeń wymagających mocniejszej promocji
+Rekomendacja
+
+Nie nadawać wszystkim plakatom wysokiej wagi.
+
+Najlepiej stosować wagę tylko dla wybranych, naprawdę ważnych wydarzeń, aby system zachował sens priorytetów.
